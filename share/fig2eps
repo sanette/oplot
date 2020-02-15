@@ -1,0 +1,571 @@
+#!/usr/bin/perl -w 
+
+# this program is copyright 2004,2005 by Vincent Fourmond
+# you can modify and redistribute it under the terms of the Gnu public licence
+
+
+use Getopt::Long qw(:config  bundling);
+
+my $help = 0;
+my $packages = "";
+my $packages_add = "";
+my $gv = 1;
+my $doc_class = "article";
+my $doc_option = "a4paper";
+
+my $pre_beg_commands = "\\usepackage{vmargin}\n"
+    ."\\setpapersize{custom}{500cm}{500cm}\n"
+    ."\\setmarginsrb{0mm}{0mm}{0mm}{0mm}{0mm}{0mm}{0mm}{0mm}\n";
+
+my $post_beg_commands = "\\pagestyle{empty}%\n";
+my $keep_ps = 0;
+
+# wether the extension of the target file is ps or eps.
+my $eps_output = 0;
+
+my $inputfile = 0;
+
+my $force_special = 0;
+
+my $keep = 0;
+
+my $bbox = "gs";
+
+my $dvips_options = "";
+my $dvips_tmp_options = "";
+
+my $pdf = 0;
+
+my $pre_add = "";
+
+# Wether to overwrite temporary files if they already exist.
+# Off by default, can give sometimes really nasty surprises (well, less
+# now that the naming bug has been corrected, but still...).
+my $overwriteTempFiles = 0;
+
+my $help_text = <<"FIN_AIDE";
+Usage: 
+fig2ps [-h|--help]\tPrints this help
+fig2ps [options] file.fig  Converts file.fig into ps using LaTeX for texts.
+    --[no]gv runs or not gv at the end;
+    --packages=pack1,pack2,... redefine packages to be used
+    --add=pack1,pack2,... supplementary packages to be used
+    -k|--keep  wether to keep or not the temporary files
+    --bbox=dvips|gs|a,b,c,d method for the bounding box
+    --input=file use file as a TeX template (\\input file)
+    --dvips=s options to go to dvips
+    --preamble=s add string to the preamble
+    --[no]pdf wether fig2ps should produce ps or pdf output
+    --eps wether the extension of the target file is eps or ps for postscript
+    --keepps when producing pdf, tells to keep the intermediary ps file
+    --[no]forcespecial forces every text object to be exported as special, that 
+      is processed with LaTeX.
+
+  See the man page for more details.
+FIN_AIDE
+    
+ 
+###############################################################################
+#############################  read config ####################################
+###############################################################################
+
+
+
+
+my $sysconfigfile = "/etc/fig2ps/fig2ps.rc";
+
+my %conffilehash = ( 'PACKAGES' => \$packages, 
+		     'ADD' => \$packages_add,
+		     'DOC_CLASS' => \$doc_class, 
+		     'DOC_OPTIONS' => \$doc_option,
+		     'FORCE_SPECIAL' => \$force_special, 
+		     'INPUT' => \$inputfile, 
+		     'GV' => \$gv,
+		     'PREAMBLE' => \$pre_add,
+		     'KEEP_PS' => \$keep_ps);
+
+
+if(-f $sysconfigfile) {
+    readconfig($sysconfigfile,%conffilehash); 
+}
+else {
+    print STDERR "Warning : the system-wide configuration file is missing\n";
+}
+
+my $persoconfigfile = $ENV{'HOME'}."/.fig2ps.rc";
+
+if(-f $persoconfigfile) {
+    readconfig($persoconfigfile,%conffilehash); 
+}
+
+# we now set a few default values which can be overridden by command-line
+# arguments
+
+# first, we choose the output depending on program name:
+if ($0 =~ /pdf/ ){ $pdf = 1;}
+if ($0 =~ /eps/ ){ $eps_output = 1;}
+
+# second, we disable gv if STDIN is not a terminal
+
+if( ! -t STDIN) {
+    $gv = 0;
+}
+
+GetOptions('help|h' => \$help,
+	   'packages=s' => \$packages,
+	   'add=s' => \$packages_add,
+	   'gv!' => \$gv,
+	   'keep|k' => \$keep,
+	   'keepps' => \$keep_ps,
+	   'bbox|b=s' => \$bbox,
+	   'input|i=s' => \$inputfile,
+	   'dvips=s' =>  \$dvips_tmp_options,
+	   'pdf!' => \$pdf,
+	   'eps' => \$eps_output,
+	   'preamble=s' => \$pre_add,
+	   'forcespecial!' => \$force_special
+	   );
+
+if ($help) { print $help_text;exit;}
+# added 23/04/04, Vincent Fourmond
+$pre_beg_commands.= $pre_add;
+
+
+my @Packages = (split (/,/,$packages));
+my @Add =  (split (/,/,$packages_add));
+
+my $header;
+
+if($pdf)
+{
+    #for fonts !!
+    #push @Packages, "aeguill";
+}
+
+prepareTex();
+ 
+
+# modified (Vincent Fourmond 20/10/2004), to account for several
+# file conversions in the command line :
+
+if(@ARGV <=0) 
+{ 
+    die "You need to specify at least one fig file to work on";
+}
+
+# we add a way to report errors
+my %results;
+
+ MAINLOOP:
+    foreach my $file (@ARGV) {
+	# (Vincent Fourmond 8/11/2004):
+	# we first need to check wether the file does exists;
+	# then, if it actually does, if it is a full (or relative) path
+	# or if it's only a file without any directory spec:
+	
+	$results{$file} = {};
+	
+	print STDERR "Processing file $file\n";
+
+	# we use an alias to write the data:
+	local *res = \$results{$file};
+	$res->{'file'} = $file;
+
+	# failed by default
+	$res->{'success'} = 0;
+	
+	if (! (-e $file)) {
+	    $res->{'error'} = "$file doesn't exist\n";
+	    next MAINLOOP;
+	}
+	
+	my $saveDir;
+	if($file =~ /^(.*)\/(.*?)$/ ) {
+	    chomp($saveDir = `pwd`);
+	    chdir $1;
+	    $file = $2;
+	}
+
+	
+	# small correction to the temporary file names:
+	# we need to make the .fig optionnal, so that we don't overwrite
+	# existing files too stupidly : if the file doesn't finish with
+	# .fig, we just append extensions in the end.
+
+	my $baseName = $file;
+	$baseName =~ s/\.fig$//;
+
+	if($eps_output) {
+	    $psfile = $baseName.".eps";
+	}
+	else {
+	    $psfile = $baseName.".ps";
+	}
+	
+	$pdffile = $baseName.".pdf";
+
+	$figtmp = $baseName.".fig2ps.tmp.fig";
+	$pstmp2 = $baseName.".fig2ps.tmp2.ps";
+
+	# use a different base name for all files dealing with latex, for
+	# encoding problems: we escape anything wich is not \w or .
+	my $modifiedBaseName = $baseName;
+	$modifiedBaseName =~ s/([^\w.])/chr (ord($1) % 26 + 65)/ge;
+	
+	$pstmp = $modifiedBaseName.".fig2ps.tmp.ps"; # necessary as well,
+	# since we are using it from within tex.
+	$textmp = $modifiedBaseName.".fig2ps.tmp.tex";
+	$auxtmp = $modifiedBaseName.".fig2ps.tmp.aux";
+	$dvitmp = $modifiedBaseName.".fig2ps.tmp.dvi";
+	$logtmp = $modifiedBaseName.".fig2ps.tmp.log";
+
+	my $fig_file = $file;
+	
+	if($force_special)
+	{
+	    $fig_file = $figtmp;
+	    if(my $err = make_special($file, $figtmp)) {
+		$res->{'error'} = 
+		    "Didn't manage to turn on special texts: $err";
+		next MAINLOOP;
+	    }
+	}
+	
+	if(system "fig2dev -L pstex -F '$fig_file' > '$pstmp'")
+	{ 
+	    
+	    $res->{'error'} = "Problems with fig2dev: command returned $?";
+	    next MAINLOOP;
+	}
+	
+	$commande = "fig2dev -L pstex_t -p '$pstmp' '$fig_file' |";
+	
+	open PSTEX, $commande;
+	open TEX, "> $textmp";
+	
+	
+	my $tail = "\\end{document}\n";
+	
+	print TEX $header;
+	
+	while(<PSTEX>)
+	{
+	    print TEX;
+	}
+	print TEX $tail;
+	close PSTEX;
+	close TEX;
+	
+	# we use batchmode so that latex doesn't ask the user on error
+	if(system "latex -interaction batchmode '$textmp'")
+	{
+	    $res->{'error'} = "Problems with latex: command returned $?";
+	    next MAINLOOP;
+	}
+	
+	mkPS($res) || next MAINLOOP;
+	
+	if($pdf)
+	{
+	    if(system "epstopdf '$psfile' --outfile='$pdffile'") {
+		$res->{'error'} = "epstopdf returned $?";
+		next MAINLOOP;
+	    }
+	    
+	}
+
+	# we managed ;-) 
+	$res->{'success'} = 1;
+	
+	
+	if(!$keep)
+	{
+	    print STDERR "Deleting temporary files...\n";
+	    unlink $figtmp,$pstmp,$pstmp2,$textmp,$dvitmp,$logtmp,$auxtmp;
+	    if($pdf) { unlink $psfile unless $keep_ps;};
+	}
+	
+	
+	if($gv)
+	{
+	    # here, we invoke gv with the option --media==BBox,
+	    # to reflect the fact that it's the BBox we are
+	    # especially interested in.
+	    print "Starting gv\n";
+	    if($pdf) {
+		system "gv '$pdffile'";
+	    }
+	    else {
+		# the option --media=BBox seems necessary only for
+		# ps files.
+		system "gv --media=BBox '$psfile'";
+	    }
+	}
+	# (Vincent Fourmond 8/11/2004) we go back to the old
+	# directory...
+	chdir $saveDir if($saveDir);
+    }
+
+# now, we display errors...
+
+foreach(@ARGV) {
+    my $res = $results{$_};
+    if($res->{'success'}) {
+	print STDERR "Conversion succeded for file ".
+	    $res->{'file'} ."\n";
+	if(defined($res->{'width'})) {
+	    print STDERR sprintf("\tSize: width=%.1fcm, heigth=%.1fcm\n",
+				 $res->{'width'},
+				 $res->{'heigth'});
+	}
+    }
+    else {
+	print STDERR "Conversion failed for file ".
+	    $res->{'file'} .":\n\t".
+	    $res->{'error'}."\n";
+    }
+}
+
+
+###############################################################################
+############################ make fig special #################################
+###############################################################################
+
+sub make_special {
+    my $input = shift @_ or return "Not enough args";
+    my $output = shift @_ or return "Not enough args";
+    open IN, $input or return "Failed to open $input";
+    open OUT, "> $output" or return "Failed to open $output";
+    while(<IN>)
+    {
+	if (/^4 /) # if this is a text
+	{
+	    my @data = split / +/;
+	    if ($data[8] & 2) # already in special
+	    {
+		print OUT;
+	    }
+	    else {
+		$data[8] ^= 2;
+		print OUT  join ' ', @data;
+	    }
+	}
+	else  	{
+	    print OUT;
+	}
+    }
+
+    close IN;
+    close OUT;
+    return undef;
+}
+ 
+
+
+###############################################################################
+############################# prepare header ##################################
+###############################################################################
+
+
+sub prepareTex {
+
+    if($inputfile) # use a common style
+    {
+	my $file = `kpsewhich $inputfile`;
+	chomp $file; # we need to remove the trailing \n left by kpsewhich
+	open FILE,$file;
+	my @lines = <FILE>;
+	close FILE;
+	# Vincent Fourmond, 03/07/05: corrected bad parentheses.
+	if(grep (/\\documentclass/,@lines) > 0) {
+	    # we have already document class
+	    $header = "\\input{$inputfile}\n";
+	}
+	else {
+	    $header = "\\documentclass[".$doc_option.
+		"]{".$doc_class."}\n";
+	    $header.= "\\input{$inputfile}\n";
+	}
+
+	# adds the add packages, (Teteph...)
+	foreach(@Add) {
+	    if(/\[(\S+)\](\S+)/)
+	    {
+		$header .=  "\\usepackage[$1]{$2}\n";
+	    }
+	    else {
+		my @_add = split ':';
+		my $pack = pop @_add;
+		if(@add> 0)
+		{
+		    $header.= "\\usepackage[".join(',',@add)."]{$pack}\n";
+		}
+		else 
+		{
+		    $header.= "\\usepackage{$_}\n";
+		}
+		
+	    }
+	}
+	
+	# for the use of colors...
+	$header.= "\\usepackage{color}\n";
+	#if($pdf) {
+	#    $header.= "\\usepackage{aeguill}\n";
+	#}
+	    
+    }
+    else # builds "by hand" the package list
+    {
+	$header = "\\documentclass[".$doc_option.
+	    "]{".$doc_class."}\n";
+	
+	foreach(@Packages,@Add) {
+	    if(/\[(\S+)\](\S+)/)
+	    {
+		$header .=  "\\usepackage[$1]{$2}\n";
+	    }
+	    else {
+		my @add = split ':';
+		my $pack = pop @add;
+		if(@add> 0)
+		{
+		    $header.= "\\usepackage[".join(',',@add)."]{$pack}\n";
+		}
+		else 
+		{
+		    $header.= "\\usepackage{$_}\n";
+		}
+		
+	    }
+	}
+	
+    }
+    $header.=  $pre_beg_commands."\n\\begin{document}".$post_beg_commands;
+}
+###############################################################################
+############################# make PS #########################################
+###############################################################################
+
+ 
+sub mkPS {
+    # we ask now the res parameter;
+    my $res = shift;
+
+    $dvips_options .= $dvips_tmp_options;
+    if($pdf)
+    {
+	$dvips_options = "-Ppdf ".$dvips_options;
+    }
+    print "$bbox\n";
+    if($bbox eq "dvips") # we are using the -E option of dvips 
+	#to make a tight BB
+    {
+# added quoting of filenames (Bug#242463)
+	if(system "dvips $dvips_options -E \"$dvitmp\" -o \"$psfile\"") {
+	    $res->{'error'} = "dvips return error code $?";
+	    return 0;
+	}
+	print STDERR "Using divps for the bounding box\n";
+    }
+    else {
+	if(system "dvips $dvips_options  \"$dvitmp\" -o \"$pstmp2\"") {
+	    $res->{'error'} = "dvips return error code $?";
+	    return 0;
+	}
+	my ($LLX, $LLY, $URX, $URY);
+	if($bbox eq "gs") { # we let gs compute the Bounding box
+	    # we specify the paper size to be b0 so that there is no problems
+	    # with outbound items
+	    $commande = "gs -dNOPAUSE -q -sDEVICE=bbox -sPAPERSIZE=b0 ".
+		"\"$pstmp2\" < /dev/null 2>& 1|";
+	    open BBOX, $commande;
+	    my $found = 0;
+	    while(<BBOX>)
+	    {
+		if(/^\%+BoundingBox/)
+		{
+		   s/\%\%BoundingBox\: //;
+		   ($LLX, $LLY, $URX, $URY) = split / /;
+		   $found = 1;
+	       }
+	    }
+	    close BBOX;
+	    die "Problems with gs" unless ($found == 1);
+	    # Ajout d'un pixel autour de la figure, pour le confort de la
+	    # visualisation avec 'gv' (Alex).
+	    --$LLX; --$LLY; ++$URX; ++$URY;
+	}
+	else {
+	    ($LLX, $LLY, $URX, $URY) = split /,/,$bbox ;
+	}
+	open IN, $pstmp2;
+	open OUT, ">" . $psfile;
+	while (<IN>) {
+	    if (/^\%+BoundingBox/) {
+		print OUT "%%BoundingBox: $LLX $LLY $URX $URY\n";
+	    }
+	    else {print OUT}
+	}
+	close OUT;
+	close IN;
+	print STDERR "Using $LLX $LLY $URX $URY for the bounding box\n";
+	# (Vincent Fourmond 4/10/2004) : print the actual size of the image
+	
+	$res->{'width'} = (-$LLX + $URX)/(596. / 21.);
+	$res->{'heigth'} = ( - $LLY + $URY)/(596. / 21.);
+
+
+
+	
+	print STDERR sprintf("Image is %.1fcm wide".
+			     " and %.1fcm high\n",
+			     (-$LLX + $URX)/(596. / 21.),
+			     ( - $LLY + $URY)/(596. / 21.));
+    }
+    return 1;
+}
+
+
+
+###############################################################################
+############################ read config files ################################
+###############################################################################
+
+
+sub readconfig {
+    my $file = shift @_;
+    my %options = @_;
+
+    open CONFIG, "$file";
+    my $line = 0;
+    while(<CONFIG>)
+    {
+	$line ++;
+	while( /\\$/)
+	{
+	    chop;
+	    chop;
+	    $_.=<CONFIG>;
+	}
+	if ((!/^\#.*$/) && (!/^\s*$/) )
+	{
+	    (my $name, my $vals) = /(\S*)\s*=\s*(\S*)$/;
+	    if((grep /$name/,keys(%options)) > 0)
+	    {
+		${$options{$name}} = $vals;
+	    }
+	    else {
+		print "Warning : line ".$line." of file ".
+		    $file." not understood\n";
+	    }
+	}
+    }
+    close CONFIG;
+}
+
+
+
+
+
+

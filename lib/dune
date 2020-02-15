@@ -1,0 +1,5 @@
+(library
+ (name oplot)
+ (public_name oplot)
+ (libraries graphics sdl sdl.sdlimage sdl.sdlttf lablgl))
+
