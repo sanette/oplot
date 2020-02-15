@@ -765,24 +765,28 @@ let draw_image ?(mode = (`mode `modulate)) image x0 y0 =
 (***********************************)
 (* screenshot *)
 (***********************************)
+(* I wish there was a conversion Raw.t --> Bigarray !! *)
 
-let sdl_screenshot ?(output = bmp_output) () = 
-  let s = Sdlvideo.create_RGB_surface [ `SWSURFACE ]
-      ~w:!window_width ~h:!window_height 
-      ~bpp:32 ~rmask:(0xFF0000l) ~gmask:(0x00FF00l)
-      ~bmask:(0x0000FFl) ~amask:(0x000000l) in
+let sdl_screenshot ?(output = bmp_output) () =
   Gl.finish ();
-  let r = GlPix.to_raw (GlPix.read ~x:0 ~y:0 ~width:!window_width ~height:!window_height 
+  let t0 = time () in
+  let w = !window_width + !left_margin + !right_margin in
+  let h = !window_height + !top_margin + !bottom_margin in
+  let s = Sdlvideo.create_RGB_surface [ `SWSURFACE ]
+      ~w ~h ~bpp:32 ~rmask:(0xFF0000l) ~gmask:(0x00FF00l)
+      ~bmask:(0x0000FFl) ~amask:(0x000000l) in
+  let r = GlPix.to_raw (GlPix.read ~x:0 ~y:0 ~width:w ~height:h 
                           ~format:`rgb ~kind:`ubyte) in
-  for i = 0 to (!window_width-1) do
-    for j = 0 to (!window_height-1) do
-      let v = Raw.gets r ~pos:(3*(j* !window_width +i)) ~len:3 in
+  for i = 0 to (w-1) do
+    for j = 0 to (h-1) do
+      let v = Raw.gets r ~pos:(3*(j*w + i)) ~len:3 in
       let c = v.(0) , v.(1) , v.(2) in
-      Sdlvideo.put_pixel_color s ~x:i ~y:(!window_height-1-j) c
+      Sdlvideo.put_pixel_color s ~x:i ~y:(h-1-j) c
     done;
   done;
+  Debug.print "Screenshot surface created in %u ms" (time () - t0);
   Sdlvideo.save_BMP s output;
-  print_endline (Printf.sprintf "Screenshot saved to [%s]" output)
+  print_endline (Printf.sprintf "Screenshot saved to [%s]." output)
 
 
 

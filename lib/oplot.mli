@@ -1,5 +1,8 @@
 (** Simple mathematical plotter library for [ocaml] with fast graphics (opengl),
     LaTeX display, and high quality vector output (xfig, postscript or PDF)
+
+        {%html:<img src="gamma.png" class="oplot" alt="oplot example">%}
+
     
     @version 0.5
 
@@ -20,7 +23,7 @@
      functions.
     
     {[
-      Open Oplot.Plt;;
+      open Oplot.Plt;;
     ]}
     
     Draw the graph of the [sine] function with
@@ -31,7 +34,10 @@
       display [Color red ; p ; Color black ; a];;
     ]}
     
-    This will open a window with the graphics. 
+    This will open a window with the graphics, which should look like this:
+    
+        {%html:<img src="example.png" class="oplot" alt="oplot example">%}
+
     Press [F] for fullscreen toggle, [CTRL-S] for saving the image, 
     and [ESC] or [Q] to close the window.
     
@@ -44,7 +50,7 @@
       
       display (sh 50) ;;
     ]}
-    
+        {%html:<img src="example2.png" class="oplot" alt="oplot example">%}
 *)
 
 (** Types of points *)
