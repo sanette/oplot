@@ -68,6 +68,7 @@ let mouse_y = ref 0
 
 let frame_length = ref (1000 / 29)  (* 29 FPS *)
 let get_frame_length () = !frame_length
+let set_frame_length x = frame_length := x
     
 let start_time = ref 0;; 
 (* utilisé pour réguler l'affichage dans les boucles principales *)

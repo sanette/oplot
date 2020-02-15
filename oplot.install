@@ -54,3 +54,6 @@ share: [
   "_build/install/default/share/oplot/fig2eps"
   "_build/install/default/share/oplot/gpl.txt"
 ]
+doc: [
+  "_build/install/default/doc/oplot/README.md"
+]

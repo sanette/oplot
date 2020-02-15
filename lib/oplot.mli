@@ -462,6 +462,8 @@ module Internal : sig
   val get_frame_length : unit -> int
   (** Get the target frame duration in ms. *)
 
+  val set_frame_length : int -> unit
+  
   val gtk_mainloop : plot_object -> int
   val gl_init : ?show:bool -> unit -> unit
   val gl_resize : unit -> unit
