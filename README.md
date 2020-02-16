@@ -1,10 +1,10 @@
-# oplot
+# Oplot
 
 Mathematical plotting library for ocaml
 
 + 2D plots
   + function `y = f(x)`
-  + parametric plot
+  + parametric curves
   + can use mathematical functions from other libraries like `gsl`
   + can use LaTeX to display text and formulas
   + animations
@@ -27,4 +27,5 @@ Mathematical plotting library for ocaml
 [API documentation](https://sanette.github.io/oplot/oplot/Oplot/index.html).
 
 
-A standalone GUI for `oplot` also exists: [goplot](https://github.com/sanette/goplot)
+An official standalone GUI for `oplot`:
+[goplot](https://github.com/sanette/goplot)

@@ -404,18 +404,20 @@ let unit_normal a b c = norm (pvect (c -| b) (a -| b))
 
 (******************)
 
+let light_on = ref true
+    
 let switch_light bool = match bool with
   | true -> begin
-       Gl.enable `lighting; 
+      Gl.enable `lighting; 
       GlLight.light ~num:0 (`position (1., -1., 1., 0.5));
       GlLight.light ~num:0 (`specular (0., 0., 0., 1.));
-      GlLight.light ~num:0 (`diffuse (0.2, 0.2, 0.2, 1.));
+      GlLight.light ~num:0 (`diffuse (0.2, 0.2, 0.2, 0.8));
       GlLight.light_model (`two_side true);
       Gl.enable `light0;
       GlLight.material ~face:`front (`shininess 30.);
       GlLight.material ~face:`front (`emission (0.2, 0.2, 0.2, 1.));
       GlLight.material ~face:`back (`shininess 10.);
-      GlLight.material ~face:`back (`emission (0.1, 0.1, 0.2, 1.));
+      GlLight.material ~face:`back (`emission (0.1, 0.1, 0.1, 1.));
       Gl.enable `color_material;
       GlLight.color_material ~face:`both `specular;
       GlLight.color_material ~face:`both `ambient_and_diffuse
@@ -438,7 +440,7 @@ let enter3d ({ Point3.x=x1; y=y1; _ }, {Point3.x=x2; y=y2; _ })  =
   (*perspective : bien ?
     GlMat.frustum ~x:(-1. , 1.) ~y:(-. 600. /. 800. , 600. /. 800.) ~z:(2. , 6.);
     GlMat.translate ~z:(-4.) ();  *)
-  switch_light true; (* si on met dans une displaylist la lumière n'est calculée qu'une fois. *)
+  switch_light !light_on; (* si on met dans une displaylist la lumière n'est calculée qu'une fois. *)
 
   (*****************)
   let zoom = !zoom3d in
@@ -795,6 +797,8 @@ let sdl_screenshot ?(output = bmp_output) () =
 (* tracé des objets *)
 (********************)
 
+let reset_gllist = ref false
+
 let set_line_width ?(dev = !default_device) w = 
   match dev with
     | X11 -> Graphics.set_line_width (int_of_float w)
@@ -986,8 +990,8 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
       (* ne peut pas être mis dans la displaylist car contient la rotation qui
          doit s'actualiser *)
       match !gl with
-      | Some list -> GlList.call list
-      | None ->
+      | Some list when not !reset_gllist -> GlList.call list
+      | _ ->
         (* on stocke les ordres graphiques dans une "display_list" opengl *)
         Debug.print ("Creating display list");
         let list = GlList.create `compile_and_execute in
@@ -998,7 +1002,7 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
         (* let () = GlLight.material ~face:`front
          *     (`emission (r/.10., g/.10., b/.10., 1.)) in *)
         let zmin = p1.Point3.z and zmax = p2.Point3.z in
-        let _setcolor = if (r*.r +. g*.g +. b*.b) > 1.
+        let setcolor = if (r*.r +. g*.g +. b*.b) > 1.
           then fun ((_,_,z):float*float*float) ->
             let c = (z -. zmin) /. (zmax -.  zmin) in
             GlDraw.color (r *. c, g *. c, b *. c) 
@@ -1024,16 +1028,16 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
             let a3 = (mx.(i).(j+1), my.(i).(j+1), mz.(i).(j+1))
             and a2 = (mx.(i+1).(j+1), my.(i+1).(j+1), mz.(i+1).(j+1)) in
             GlDraw.begins `quads; (* ou faire quad_strip ? *)
-            (* setcolor !a0;*)
+            if not !light_on then setcolor !a0;
             GlDraw.normal3 (normal_vector i j);
             GlDraw.vertex3 !a0;
-            (* setcolor !a1; *)
+            if not !light_on then setcolor !a1;
             GlDraw.normal3 (normal_vector (i+1) j);
             GlDraw.vertex3 !a1;
-            (* setcolor a2; *)
+            if not !light_on then setcolor a2;
             GlDraw.normal3 (normal_vector (i+1) (j+1));
             GlDraw.vertex3 a2;
-            (* setcolor a3; *)
+            if not !light_on then setcolor a3;
             GlDraw.normal3 (normal_vector i (j+1));
             GlDraw.vertex3 a3;
             GlDraw.ends ();
@@ -1047,6 +1051,7 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
            aliasing *)
         if wire then begin
           switch_light false; (* bien ? *)
+          let r,g,b = if !light_on then (r,g,b) else (r/.2., g/.2., b/.2.) in
           GlDraw.color (r, g, b);
           for ii=1 to h/2 do
             let i = ii*2 in
@@ -1088,8 +1093,8 @@ let rec draw_grid gl ?(dev = !default_device) ?(wire=true) plot_func m (p1,p2) =
     | GL ->  enter3d (p1,p2);
       begin
         match !gl with
-        | Some list -> GlList.call list
-        | None -> (* on stocke les ordres graphiques dans une "display_list" opengl *)
+        | Some list when not !reset_gllist -> GlList.call list
+        | _ -> (* on stocke les ordres graphiques dans une "display_list" opengl *)
           let list = GlList.create `compile_and_execute in
           let {Point3.x=x1; y=y1; z=zmin} = p1
           and {Point3.x=x2; y=y2; z=zmax} = p2 in
@@ -1193,8 +1198,8 @@ let rec draw_curve3d ?(dev = !default_device) gl plot_func p3d (p1,p2)  =
   | GL -> begin 
       enter3d (p1,p2);
       match !gl with
-      | Some list -> GlList.call list
-      | None -> (* on stocke les ordres graphiques dans une "display_list" opengl *)
+      | Some list when not !reset_gllist -> GlList.call list
+      | _ -> (* on stocke les ordres graphiques dans une "display_list" opengl *)
         let list = GlList.create `compile_and_execute in
         GlDraw.begins `line_strip;
         List.iter (fun {Point3.x=x; y=y; z=z} -> GlDraw.vertex3 (x,y,z)) p3d;
@@ -1415,64 +1420,97 @@ let gl_zoom_in () = mincr zoom3d; mincr zoom3d
 let gl_zoom_out () = mdecr zoom3d; mdecr zoom3d
 
 let gl_mouse_motion x y =
-  let dt = 0.01 in
+  let dt = 0.01 /. !gl_scale in
   let dX = dt *. float (x - !mouse_x)
   and dY = dt *. float (y - !mouse_y) in
   rotate3d dY dX;
   mouse_x :=  x; mouse_y := y
 
+let print_help () =
+  print_endline
+    "
+---------------:-------Oplot help---------
+'h' or '?'     : this help message.
+
+'q' or ESC     : quit
+
+arrows         : rotate the 2D scene
+'='            : 2D zoom out
+SHIFT '='      : 2D zoom in
+TAB:           : reset 2D position
+
+CTRL arrows:   : rotate the 3D scene
+CTRL       '=' : 3D zoom out
+CTRL SHIFT '=' : 3D zoom in
+CTRL TAB       : reset 3D position
+CTRL 'l'       : toggle 3D lighting
+
+'f'            : toggle fullscreen (may change screen resolution)
+CTRL 's'       : save screenshot (default file = \"oplot.bmp\")
+
+CTRL 'z'       : suspend (for debugging)
+---------------:---------------------------
+"
 
 (* gestion du clavier sous SDL. Retourne true si on doit quitter
    (escape ou z) *)
-let sdl_key key = 
+let sdl_key key =
+  let quit = ref false in
   let modifier =  key.Sdlevent.keymod in
   (match key.Sdlevent.keysym with
+   | Sdlkey.KEY_QUESTION
+   | Sdlkey.KEY_h -> print_help ()
    | Sdlkey.KEY_LEFT when (modifier land Sdlkey.kmod_ctrl) <> 0
-     -> rotate3d 0. (-.0.02); false
-   | Sdlkey.KEY_LEFT -> GlMat.rotate ~angle:1. ~z:1. (); false
+     -> rotate3d 0. (-.0.02)
+   | Sdlkey.KEY_LEFT -> GlMat.rotate ~angle:1. ~z:1. ()
    | Sdlkey.KEY_RIGHT when (modifier land Sdlkey.kmod_ctrl) <> 0
-     -> rotate3d 0. 0.02; false
-   | Sdlkey.KEY_RIGHT -> GlMat.rotate ~angle:(-1.) ~z:1. (); false
+     -> rotate3d 0. 0.02
+   | Sdlkey.KEY_RIGHT -> GlMat.rotate ~angle:(-1.) ~z:1. ()
    | Sdlkey.KEY_UP when (modifier land Sdlkey.kmod_ctrl) <> 0
-     -> rotate3d (-.0.02) 0.; false
-   | Sdlkey.KEY_UP -> GlMat.rotate ~angle:(-1.) ~x:1. (); false
+     -> rotate3d (-.0.02) 0.
+   | Sdlkey.KEY_UP -> GlMat.rotate ~angle:(-1.) ~x:1. ()
    | Sdlkey.KEY_DOWN  when (modifier land Sdlkey.kmod_ctrl) <> 0
-     -> rotate3d 0.02 0.; false
-   | Sdlkey.KEY_DOWN -> GlMat.rotate ~angle:1. ~x:1. (); false
+     -> rotate3d 0.02 0.
+   | Sdlkey.KEY_DOWN -> GlMat.rotate ~angle:1. ~x:1. ()
    | Sdlkey.KEY_EQUALS when 
        (modifier land Sdlkey.kmod_shift) <> 0 
        && (modifier land Sdlkey.kmod_ctrl) <> 0
-     -> mincr zoom3d; false 
+     -> mincr zoom3d 
    | Sdlkey.KEY_EQUALS when (modifier land Sdlkey.kmod_shift) <> 0
-     -> GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 (); false 
+     -> GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 () 
    | Sdlkey.KEY_PLUS
-     -> GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 (); false (* utiliser plutot la caméra?*)
+     -> GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 () (* utiliser plutot la caméra?*)
    | Sdlkey.KEY_EQUALS when (modifier land Sdlkey.kmod_ctrl) <> 0
-     -> mdecr zoom3d; false
-   | Sdlkey.KEY_EQUALS -> GlMat.scale ~x:0.91 ~y:0.91 ~z:0.91 (); false
+     -> mdecr zoom3d
+   | Sdlkey.KEY_EQUALS -> GlMat.scale ~x:0.91 ~y:0.91 ~z:0.91 ()
    | Sdlkey.KEY_TAB when (modifier land Sdlkey.kmod_ctrl) <> 0
      -> position3d := default_position3d;
-     zoom3d := default_zoom3d; false
+     zoom3d := default_zoom3d
    | Sdlkey.KEY_TAB -> GlMat.pop (); GlMat.push (); 
-     initial_time:=time(); false 
-   | Sdlkey.KEY_f -> toggle_fullscreen (); false
-   | Sdlkey.KEY_p -> decr pause_pass; false 
+     initial_time:=time()
+   |Sdlkey.KEY_l when (modifier land Sdlkey.kmod_ctrl) <> 0 ->
+     light_on := not !light_on;
+     reset_gllist := true;
+     Debug.print "Light = %b" !light_on
+     (* GlLight.material ~face:`front (`emission (c.r/.10., c.g/.10., c.b/.10., 1.)) *)
+   | Sdlkey.KEY_f -> toggle_fullscreen ()
+   | Sdlkey.KEY_p -> decr pause_pass 
    (* à améliorer, ex stack *)
-   | Sdlkey.KEY_ESCAPE | Sdlkey.KEY_q-> close (); true
+   | Sdlkey.KEY_ESCAPE | Sdlkey.KEY_q-> close (); quit := true
    | Sdlkey.KEY_z when (modifier land Sdlkey.kmod_ctrl) <> 0 -> 
      Debug.print "Suspended"; (* for debug only *)
-     true
+     quit := true
    | Sdlkey.KEY_s when (modifier land Sdlkey.kmod_ctrl) <> 0 -> 
      (* Sdlvideo.save_BMP (Sdlvideo.get_video_surface ())
         bmp_output; *)
      (* ne marche pas. voir le fichier sdl-opengl *)
-     sdl_screenshot ();
-     false
+     sdl_screenshot ()
    | _ when (Sdlkey.get_mod_state ()) = 0 
      (* on reste en pause en cas d'appui sur un
         modificateur (control, shift, etc.) *)
-     -> resume_pause := true; false
-   | _ -> false)
+     -> resume_pause := true
+   | _ -> ());
+  !quit
 
 let sdl_mouse_close () =
   (* print_endline "up button"; *)
@@ -1708,7 +1746,8 @@ let rec draw ~dev sh view =
 
 let draw ?(dev = !default_device) sh view =
   draw ~dev sh view;
-  force_refresh := false
+  force_refresh := false;
+  reset_gllist := false
 
 let force_refresh () = force_refresh := true
     

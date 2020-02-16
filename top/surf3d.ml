@@ -32,4 +32,4 @@ let fz u v = -. 2. *. (1. -. (cos v) /. 2.) *. sin u;;
 
 let s = surf3d_plot ~width:30 ~height:50 fx fy fz 0. 0. 6.283 6.283;;
 
-display [Color cyan;s;Color red];;
+display [Clear black; Color cyan; s; Color red];;

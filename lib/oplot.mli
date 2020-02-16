@@ -1,14 +1,19 @@
 (** Simple mathematical plotter library for [ocaml] with fast graphics (opengl),
     LaTeX display, and high quality vector output (xfig, postscript or PDF)
 
+    
         {%html:<img src="gamma.png" class="oplot" alt="oplot example">%}{%html:<img src="surf3d.png" class="oplot" alt="oplot example">%}
-
+    
+    Source available on {{:https://github.com/sanette/oplot}github}.
     
     @version 0.5
+    
+    @author San Vũ Ngọc
 
-    @author Vu Ngoc San
     
 *)
+
+
 
 (** {1 Example} 
     
@@ -39,7 +44,8 @@
         {%html:<img src="example.png" class="oplot" alt="oplot example">%}
 
     Press [F] for fullscreen toggle, [CTRL-S] for saving the image, 
-    and [ESC] or [Q] to close the window.
+    and [ESC] or [Q] to close the window. 
+    Press [h] to see the list of active keys.
     
     Of course you can play with it:
     {[
