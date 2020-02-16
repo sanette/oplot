@@ -977,7 +977,8 @@ let move3d m =
   end
 
 
-let rec draw_surf3d ?(dev = !default_device) ?(wire=true) gl plot_func mx my mz (p1,p2)  =
+let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
+    gl plot_func mx my mz (p1,p2)  =
   match dev with
   | X11 -> raise (Not_implemented "X11 draw_surf3d")
   | GL -> begin 
@@ -993,12 +994,16 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true) gl plot_func mx my mz 
         let h = Array.length mx - 2
         and w = Array.length mx.(0) - 2 in
         let { r=r; g=g; b=b } = !current_color in
-        (*let () = GlLight.material `front (`emission (r/.10., g/.10., b/.10., 1.)) in*)
+        (* faire une touche pour ça: *)
+        (* let () = GlLight.material ~face:`front
+         *     (`emission (r/.10., g/.10., b/.10., 1.)) in *)
         let zmin = p1.Point3.z and zmax = p2.Point3.z in
         let _setcolor = if (r*.r +. g*.g +. b*.b) > 1.
-          then fun ((_,_,z):float*float*float) -> let c = (z -. zmin) /. (zmax -.  zmin) in
+          then fun ((_,_,z):float*float*float) ->
+            let c = (z -. zmin) /. (zmax -.  zmin) in
             GlDraw.color (r *. c, g *. c, b *. c) 
-          else fun ((_,_,z):float*float*float) -> let c = (z -. zmin) /. (zmax -.  zmin) in
+          else fun ((_,_,z):float*float*float) ->
+            let c = (z -. zmin) /. (zmax -.  zmin) in
             GlDraw.color (c +. r -. r *. c, c +. g -. g *. c, c +. b -. b *. c)
         in
         let a i j = mx.(i).(j), my.(i).(j), mz.(i).(j) in
@@ -1347,7 +1352,7 @@ let draw_axis a ?(dev = !default_device) view =
              { x=xa ; y=ymax } ;
              { x=(xa +. avtick) ; y=(ymax -. ahtick) } ;
              { x=xa ; y=ymax } ] ) in
-        (* draw_segments (List.concat [ l_vticks ; l_hticks ; l_axes ; l_harrow ; l_varrow ]) view ~dev:dev; *)
+        (* draw_segments (List.concat [ l_vticks ; l_hticks ; l_axes ; l_harrow ; l_varrow ]) view ~dev; *)
         (* chiffres *)
         let xtunit = (sign minxunit) *. 
                      10.**(myround (log10 (1.7 *. (abs_float minxunit))))
@@ -1383,10 +1388,10 @@ let draw_axis a ?(dev = !default_device) view =
     else ( match (a.ticks) with
           None -> raise View_expected
         | Some t -> t ) in
-  draw_segments axis_segments view ~dev:dev;
+  draw_segments axis_segments view ~dev;
   incr counter;
-  List.iter (draw_text view ~dev:dev) text_labels
-(*   List.iter (draw_text view ~dev:dev) l_vnum;;*)
+  List.iter (draw_text view ~dev) text_labels
+(*   List.iter (draw_text view ~dev) l_vnum;;*)
 
 (********************************************************************)
 
@@ -1536,10 +1541,10 @@ let sdl_freeze t =
   let init_time = time () in
   let myeventopt = ref (Sdlevent.poll ()) in
   Sdlevent.disable_events Sdlevent.active_mask;
+  Sdlgl.swap_buffers();
   while  (!myeventopt = None && ( t=0 || time() - init_time < t)) 
   do 
     myeventopt := Sdlevent.poll ();
-    Sdlgl.swap_buffers();
     Sdltimer.delay !frame_length;
   done;
   time_delay := !time_delay + time () - init_time;
@@ -1604,29 +1609,29 @@ let exec_user f view dev =
 let rec object_plot ?(addcounter = true) ~dev po view  =
   if addcounter then incr counter;
   match po with
-  | Points pl -> draw_points pl view ~dev:dev
-  | Lines pl -> List.iter (fun l -> draw_lines l view ~dev:dev) pl
-  | Poly pl -> draw_poly pl view ~dev:dev
-  | Axis a -> draw_axis a view ~dev:dev
-  | Color c -> set_color c ~dev:dev
-  | Text t -> draw_text view t ~dev:dev
-  | Matrix (m,_) -> draw_matrix m view ~dev:dev
+  | Points pl -> draw_points pl view ~dev
+  | Lines pl -> List.iter (fun l -> draw_lines l view ~dev) pl
+  | Poly pl -> draw_poly pl view ~dev
+  | Axis a -> draw_axis a view ~dev
+  | Color c -> set_color c ~dev
+  | Text t -> draw_text view t ~dev
+  | Matrix (m,_) -> draw_matrix m view ~dev
   | Grid ((m,v3,w),gl) -> let v3 = initialize_view3 v3 in
-    draw_grid ~wire:w gl (object_plot ~addcounter:false) m v3 ~dev:dev
+    draw_grid ~wire:w gl (object_plot ~addcounter:false) m v3 ~dev
   (* pas vraiment besoin de passer !current_view3d partout *)
   | Surf3d ((fx,fy,fz,v3,w),gl) -> let v3 = initialize_view3 v3 in
-    draw_surf3d ~wire:w gl (object_plot ~addcounter:false) fx fy fz v3 ~dev:dev
+    draw_surf3d ~wire:w gl (object_plot ~addcounter:false) fx fy fz v3 ~dev
   | Curve3d ((p3d,v3),gl) -> let v3 = initialize_view3 v3 in
-    draw_curve3d gl (object_plot ~addcounter:false) p3d v3 ~dev:dev
+    draw_curve3d gl (object_plot ~addcounter:false) p3d v3 ~dev
   | Move3d m -> move3d m
   | Adapt (vo,f) -> let obj = 
                       (match (!vo,view) with
                        | ((Some w, Some o), Some v) when w = v -> o
                        | _ -> let o = f view in vo := (view, Some o); o) in
     object_plot ~dev obj view
-  | Pause t -> do_pause t ~dev:dev
+  | Pause t -> do_pause t ~dev
   | Freeze t -> do_freeze t ~dev
-  | Clear c -> clear_sheet c ~dev:dev
+  | Clear c -> clear_sheet c ~dev
   | View _ -> ()
   | User f -> exec_user f view dev
   | _ -> raise ( Not_implemented "object unknown" )
@@ -1639,7 +1644,7 @@ let anim_plot f ?pas ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
       then (t0 +. float (time () - !initial_time) /. 1000. )
       else fmin t1 (t0 +. float (time () - !initial_time) /. 1000.) in
     let p = plot (f t) ?pas x0 x1 in
-    object_plot p (Some v) ~dev:dev in
+    object_plot p (Some v) ~dev in
   User userfu
 
 
@@ -1684,20 +1689,20 @@ let rec draw ~dev sh view =
             Sheet [] -> ()
           | Sheet (po::ssh) -> 
             ( match po with
-              | View vv -> draw (Sheet ssh) vv ~dev:dev
-              | Sheet sssh -> draw (Sheet sssh) None ~dev:dev;
+              | View vv -> draw (Sheet ssh) vv ~dev
+              | Sheet sssh -> draw (Sheet sssh) None ~dev;
                 (* (on réinitialise la vue) *)
-                draw (Sheet ssh) view ~dev:dev 
-              | _ -> draw po view ~dev:dev;
-                draw (Sheet ssh) view ~dev:dev )
-          | po -> object_plot po view ~dev:dev )
+                draw (Sheet ssh) view ~dev 
+              | _ -> draw po view ~dev;
+                draw (Sheet ssh) view ~dev )
+          | po -> object_plot po view ~dev )
       | None -> (match sh with
             Sheet [] -> ();
           | Sheet (po :: ssh) -> let v = maxview po in 
-            draw po v ~dev:dev;
-            draw (Sheet ssh) v ~dev:dev
+            draw po v ~dev;
+            draw (Sheet ssh) v ~dev
           | po -> let v = maxview po in 
-            object_plot po v ~dev:dev)
+            object_plot po v ~dev)
     )
 (* (oui je sais c'est un peu trop compliqué) *)
 

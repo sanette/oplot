@@ -1,7 +1,7 @@
 (** Simple mathematical plotter library for [ocaml] with fast graphics (opengl),
     LaTeX display, and high quality vector output (xfig, postscript or PDF)
 
-        {%html:<img src="gamma.png" class="oplot" alt="oplot example">%}
+        {%html:<img src="gamma.png" class="oplot" alt="oplot example">%}{%html:<img src="surf3d.png" class="oplot" alt="oplot example">%}
 
     
     @version 0.5
@@ -107,71 +107,72 @@ module Plt : sig
 
   type align = CENTER | LEFT | RIGHT
 
-  type text_flag = Normal | Latex
-
-  type gl_handler = SDL | GLUT | GTK
+  (* type text_flag = Normal | Latex *)
 
   (** {2 Defining plot objects}
 
       'Defining' means computing the coordinates of the points and lines to
-      display, but not actually displaying them.  *)
+     display, but not actually displaying them. We call a "sheet" a list of
+     objects to be displayed.  *)
 
   type plot_object =
     | Points of points
-    (** A list of points *)
+    (** A list of points. *)
 
     | Lines of points list
-    (** The points of each sublist are joined by a line segment *)
+    (** The points of each sublist are joined by a line segment. *)
 
     | Poly of points
-    (** Closed polygonal line *)
+    (** Closed polygonal line. *)
   
     | View of view option
-    (** Indicate the x-y range to display *)
+    (** Indicate the x-y range to display. *)
   
     | Axis of axis
-    (** Axis with divisions *)
+    (** Axis with divisions. *)
   
     | Color of color
-    (** Indicate the color to draw subsequent objects *)
+    (** Indicate the color to draw subsequent objects. *)
   
     | Text of text
-    (** Position a text at some (x,y) coordinate *)
+    (** Position a text at some (x,y) coordinate. *)
   
     | Matrix of imatrix * (view option)
-    (** Checkboard-like matrix view with 0-255 greyscale*)                  
+    (** Checkboard-like matrix view with 0-255 greyscale. *)                  
   
     | Grid of grid * gllist
-    (** 3D mountain-like representation of a matrix *)
+    (** 3D mountain-like representation of a matrix. *)
               
     | Surf3d of surf3d * gllist
-    (** 3D parametric surface *)
+    (** 3D parametric surface. *)
                 
     | Curve3d of curve3d * gllist
-    (** 3D points joined by line segments *)
+    (** 3D points joined by line segments. *)
   
     | Move3d of move3d
-    (** Animate the 3D object by a uniform rotation *)
+    (** Animate the 3D object by a uniform rotation. *)
   
     | Pause of int
-    (** Wait before displaying next object, but don't stop animation in the
-       opengl window *)
+    (** Display the current state of the sheet, and wait before displaying next
+       object, but don't stop animation in the opengl window. This only works
+       for interactive displays using the {!GL} device. *)
   
     | Freeze of int
-    (** Suspend all display for the given time *)
+    (** Display the current state of the sheet and suspend all display for the
+       given time. *)
   
     | Clear of color
-    (** Clear graphics *)
+    (** Clear graphics. *)
   
     | Adapt of ((view option) * (plot_object option)) ref *
                (view option -> plot_object)
-    (** Any object that need to adapt itself to the current View *)
+    (** Any object that needs to adapt itself to the current View. *)
   
     | User of (view -> plot_device -> unit)
-    (** Execute any user-defined program *)
+    (** Execute any user-defined program. *)
   
     | Sheet of plot_object list
-    (** Group plot objects *)
+    (** Group plot objects. *)
 
 
   (** {3 2D objects} 
@@ -277,15 +278,8 @@ module Plt : sig
 
   val display : ?dev:user_device ->
     ?fscreen:bool -> ?output:string -> plot_object list -> unit
-  (** Display the plot objects *)
-
-  val object_plot :
-    ?addcounter:bool -> dev:plot_device -> plot_object -> view option -> unit
-  (** Draw a single object, but not a Sheet *)
-    
-  val elapsed : unit -> int
-  (** Time elapsed from the openning of the opengl window *)
-    
+  (** Initialize the graphics device and display the plot objects *)
+     
   (** {3 Available devices} *)
     
   val x11 : user_device
@@ -333,6 +327,37 @@ module Plt : sig
   (** Close the current rendering window and clear the temporary directory *)
 
   val get_tmp_dir : unit -> string
+
+     (** {3 Drawing specific objects}
+
+       These functions should not be used interactively, because they
+      necessitate the graphics window to be already opened by {!display}; but
+      they can be interesting when programming a {!User} object.  *)
+
+   val set_color : ?dev:plot_device -> color -> unit
+     
+   val object_plot :
+     ?addcounter:bool -> dev:plot_device -> plot_object -> view option -> unit
+   (** Draw a single object, but not a Sheet. The device must have been
+       initialized before.
+       
+       If [addcounter] is true (default) the object will be considered as a new
+       element of the currently displayed sheet; otherwise, it will be considered
+       as being part of the currently displayed object: this only affects the
+       {!Pause} mechanism. *)
+
+   val elapsed : unit -> int
+  (** Time elapsed from the openning of the opengl window *)
+
+   val user_flush : plot_device -> unit
+   (** Synchronize graphics output by swapping back and front buffers. Hence two
+      consecutive calls will result in flicker. See {!copy_back_buffer}. *)
+
+   val copy_back_buffer : unit -> unit
+   (** Copy backbuffer to front buffer. If I use this intensively I can really
+      hear my graphics card... *)
+     
+   (* val draw_points : points -> ?dev:plot_device -> ?dep:int -> view option -> unit *)
 
 end
 
@@ -452,7 +477,9 @@ module Internal : sig
    * type gl_handler = SDL | GLUT | GTK *)
 
   (** {2 Opengl rendering and interface} *)
-    
+
+  type gl_handler = SDL | GLUT | GTK
+                      
   val set_default_gl : gl_handler -> unit
   
   val init : unit -> unit
