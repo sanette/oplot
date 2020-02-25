@@ -18,7 +18,7 @@ let oplot_dir =
       match (basename exe), (basename (dirname exe)) with
       | "goplot", "bin"
         (* = cas où la librairie est utilisée par goplot *)
-        -> Filename.concat (dirname (dirname exe)) "share/oplot"
+        -> Filename.concat (dirname (dirname exe)) "share/goplot"
       | "goplot.exe", "gui"       (* = lancement par dune exec gui/goplot.exe *)
       | "utop.exe", ".utop"       (* = lancement par dune utop *)
         -> Filename.concat (dirname (dirname exe)) "share"
@@ -33,8 +33,14 @@ let oplot_dir =
     end
   | e -> raise e
 
-let () = Debug.print "Using oplotdir=%s " oplot_dir
-
+(* let oplot_dir = ref oplot_dir
+ * 
+ * let set_oplot_dir s =
+ *   oplot_dir := s;
+ *   Debug.print "Using oplotdir=%s " !oplot_dir
+ * 
+ * let () = set_oplot_dir !oplot_dir *)
+    
 let first_time = ref true
 
 (* répertoire perso. Inutilisé pour le moment *)
@@ -182,10 +188,10 @@ let exe_from_list list =
 
 (* cherche un programme pour voir des images. None si rien trouvé *)
 let viewer = 
-  exe_from_list ["display"; "kuickshow"; "gwenview"; "gimp"]
+  exe_from_list ["kuickshow"; "gwenview"; "eog"; "display"; "gimp"; "Gimp" ]
 
 (* cherche un programme pour voir du postscript. None si rien trouvé *)
 let psviewer = 
-  exe_from_list ["gv"; "kghostview"]
+  exe_from_list ["okular"; "gv"; "kghostview"]
 
 let first_time () = !first_time

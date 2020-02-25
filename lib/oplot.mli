@@ -522,6 +522,11 @@ module Internal : sig
 
   val set_line_width : ?dev:plot_device -> float -> unit
   val set_point_size : ?dev:plot_device -> float -> unit
+
+  val get_light : unit -> bool
+  val toggle_light : unit -> unit
+  (** Toggle 3D lighting *)
+  
   val force_refresh : unit -> unit
   val gl_mouse_motion : int -> int -> unit
   val interrupt : unit -> unit

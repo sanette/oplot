@@ -174,31 +174,86 @@ let rec loop i = if i = l then -1
 let fig_of_color c = mem fig_colors (rgb_of_color c)
 
 let pr = Printf.printf
-           
+
+let map_option f = function
+  | Some x -> Some (f x)
+  | None -> None
+    
+(* first line of output from the shell command *)
+let string_of_process command =
+  let proc = Unix.open_process_in command in
+  let res = input_line proc in
+   match Unix.close_process_in proc with
+   | Unix.WEXITED 0 -> Some res
+   | Unix.WEXITED e -> Debug.print "Command %s exited with error %u" command e; None
+   | _ ->  Debug.print "Command %s exited with some error" command; None
+
 (* try to obtain the monitor's DPI on linux systems. Does not work with multiple
    monitors *)
-let get_dpi () =
-  try
-    let proc = Unix.open_process_in
-        "xdpyinfo | grep resolution | awk '{print $2}'" in
-    let res = input_line proc in
-    match Unix.close_process_in proc with
-    | Unix.WEXITED 0 ->
+let get_pixel_height_from_xrandr () =
+  let line = string_of_process
+      "xrandr | grep \"connected primary\" | grep -E \"[0-9]+x[0-9]+\" -o" in
+  try line |> map_option (fun res ->
       let i = String.index res 'x' in
-      let dpi =int_of_string (String.sub res 0 i) in
-      pr "Detected DPI=%u\n" dpi;
-      Some dpi
-    | _ -> pr "Cannot get monitor's DPI from [%s]. Using 110." res;
-      None
-  with
-  | _ -> pr "Cannot get monitor's DPI from xdpyinfo. Using 110.";
+      String.sub res (i+1) (String.length res - i - 1)
+      |> int_of_string)
+  with _ ->
+    Debug.print "get_pixel_height_from_xrandr: cannot parse output of xrandr (%s)"
+      (match line with None -> "none" | Some s -> s);
     None
 
+let get_device_height_from_xrandr () =
+  let line = string_of_process
+      "xrandr | awk '/connected primary/ {print $NF}'" in
+  try line |> map_option (fun res ->
+      let i = String.index res 'm' in
+      String.sub res 0 i
+      |> int_of_string)
+  with _ ->
+    Debug.print "get_device_height_from_xrandr: cannot parse output of xrandr (%s)"
+      (match line with None -> "none" | Some s -> s);
+    None
+
+let get_dpi_from_xrandr () =
+  match get_device_height_from_xrandr (), get_pixel_height_from_xrandr () with
+  | None, _ -> None
+  | _, None -> None
+  | Some m, Some p -> let dpi = float p /. (float m /. 25.4) |> int_of_float in
+    Some dpi
+    
+let get_dpi_from_xdpyinfo () =
+  let line = string_of_process
+      "xdpyinfo | grep resolution | awk '{print $2}'" in
+  try line |> map_option (fun res ->
+      let i = String.index res 'x' in
+      int_of_string (String.sub res 0 i))
+  with
+  | _ -> Debug.print "get_dpi_from_xdpyinfo: cannot parse output of xpdyinfo (%s)"
+           (match line with None -> "none" | Some s -> s);
+    None
+
+let get_dpi () =
+  match get_dpi_from_xdpyinfo (), get_dpi_from_xrandr () with
+  | None, None -> None
+  | Some dpi, None
+  | None, Some dpi -> Some dpi
+  | Some d1, Some d2 ->
+    if abs (d1-d2) > 5
+    then begin
+      Debug.print
+        "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing the \
+         smaller." d2 d1;
+      Some (min d1 d2)
+    end
+    else Some d2
+     
 let init () =
+  Debug.print "init";
   let default_dpi = 110 in
   let dpi = match get_dpi () with
-    | Some x -> x
-    | None -> default_dpi in
+    | Some x -> pr "Detected DPI=%u\n" x; x
+    | None -> pr "Cannot get monitor's DPI. Using %u." default_dpi;
+      default_dpi in
   let s = if dpi <= 110 then 1. else (float dpi /. 110.) in
   pr "Using SCALE=%f\n" s;
   gl_scale := s;
@@ -229,3 +284,5 @@ let set_mouse_x x = mouse_x := x
 let set_mouse_y y = mouse_y := y
     
 let get_window_height () = !Oplotdef.window_height
+
+let () = init ()

@@ -1,6 +1,6 @@
 (*
 
-Dynamical system plugin for Oplot
+Dynamical Systems plugin for Oplot
 San Vu Ngoc 
 
 ---
@@ -42,7 +42,7 @@ let rec desolve_1d ?pas f y0 t0 t1 =
       None -> (t1 -. t0) /. 800.
     | Some pp -> pp in 
   let sys = Gsl.Odeiv.make_system (fun t y dydt -> dydt.(0) <- (f t y.(0))) 1 in
-  let step = Gsl.Odeiv.make_step Gsl.Odeiv.RKF45 1 in
+  let step = Gsl.Odeiv.make_step Gsl.Odeiv.RKF45 ~dim:1 in
   let y = Array.make 1 y0 in
   let yerr = Array.make 1 0. in
   let rec loop t list =
@@ -64,7 +64,7 @@ let rec desolve_2d ?pas f x0 y0 t0 t1 =
     | Some pp -> pp in 
   let sys = Gsl.Odeiv.make_system 
     (fun t y dydt -> (Array.blit (f t y) 0 dydt 0 2)) 2 in
-  let step = Gsl.Odeiv.make_step Gsl.Odeiv.RKF45 2 in
+  let step = Gsl.Odeiv.make_step Gsl.Odeiv.RKF45 ~dim:2 in
   let y = [| x0 ; y0 |] in
   let yerr = Array.make 2 0. in
   let rec loop t list =
@@ -87,7 +87,7 @@ let rec desolve ?(first=true) ?pas f y0 t0 t1 =
   let dim = Array.length y0 in
   let sys = Gsl.Odeiv.make_system 
     (fun t y dydt -> (Array.blit (f t y) 0 dydt 0 dim)) dim in
-  let step = Gsl.Odeiv.make_step Gsl.Odeiv.RKF45 dim in
+  let step = Gsl.Odeiv.make_step Gsl.Odeiv.RKF45 ~dim in
   let y = Array.copy y0 in
   let yerr = Array.make dim 0. in
   let rec loop t list =
@@ -196,9 +196,9 @@ let desolve_memo ?(pas=0.1) f y0 t0 =
 let anim_ode_2d f x0 y0 t0 t1 = 
   let mysolve = desolve_2d_memo f x0 y0 t0 in
   let userfu v dev =
-    let t = min t1 (t0 +. float (Osys.elapsed ()) /. 1000.) in
+    let t = min t1 (t0 +. float (elapsed ()) /. 1000.) in
     (* List.iter (fun x -> object_plot (Lines x) (Some v) ~dev) *)
-    Osys.object_plot (Lines (mysolve t)) (Some v) ~dev in
+    object_plot (Lines (mysolve t)) (Some v) ~dev in
   User userfu;;
 
 let proj2d a =
@@ -209,20 +209,20 @@ let proj2d a =
 let anim_ode ?time_pos ?(show_head=false) ?(speed=1.) f y0 t0 t1 = 
   let mysolve = desolve_memo f y0 t0 in
   let userfu v dev =
-    let t = min t1 (speed *. (t0 +. float (Osys.elapsed ()) /. 1000.)) in
+    let t = min t1 (speed *. (t0 +. float (elapsed ()) /. 1000.)) in
     (* List.iter (fun x -> object_plot (Lines x) (Some v) ~dev) *)
     let sol = mysolve t in
     let sol2d =  List.map proj2d sol in
-    Osys.object_plot (Lines [sol2d]) (Some v) ~dev;
+    object_plot (Lines [sol2d]) (Some v) ~dev;
     (match time_pos with 
      | Some {x=x; y=y} -> 
        let tt = text (Printf.sprintf "t=%.2f" t) x y in
-       Osys.object_plot tt (Some v) ~dev
+       object_plot tt (Some v) ~dev
      | None -> ());
     if show_head then begin
       let p = List.hd sol2d in
       let hd = text "o" p.x p.y in
-      Osys.object_plot hd (Some v) ~dev
+      object_plot hd (Some v) ~dev
     end
   in
   User userfu;;
@@ -234,7 +234,7 @@ let anim_ode_3d f y0 t0 t1 =
   let userfu (a1,a2) dev =
     Osys.set_line_width 4.;
     Osys.set_point_size 1.3;
-    let t = min t1 (t0 +. float (Osys.elapsed ()) /. 1000.) in
+    let t = min t1 (t0 +. float (elapsed ()) /. 1000.) in
     (* List.iter (fun x -> object_plot (Lines x) (Some v) ~dev) *)
     let sol = mysolve t in
     let y0 = List.hd sol in
@@ -247,7 +247,7 @@ let anim_ode_3d f y0 t0 t1 =
     let v3 = { Point3.x=a1.Point2.x; y=a1.Point2.y; z = !zmin},
              { Point3.x=a2.Point2.x; y=a2.Point2.y; z = !zmax} in
 
-    Osys.object_plot (Curve3d ((sol3d,v3), Osys.gllist_empty ())) ~dev
+    object_plot (Curve3d ((sol3d,v3), Osys.gllist_empty ())) ~dev
       (Some (a1,a2));
     Osys.set_line_width 1.3;
     Osys.set_point_size 1.3 in

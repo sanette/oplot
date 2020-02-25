@@ -13,9 +13,9 @@ exception Should_Not_Happen
 
 (* sorties graphiques implémentées par le programme *)
 type plot_device = X11 | GL | FIG 
-let window_width = ref 800
+let window_width = ref 640
 (* taille sans les marges en pixels. Sera multiplié par gl_scale. *)
-let window_height = ref 600
+let window_height = ref 480
 let fwindow_width = ref (float !window_width)
 let fwindow_height = ref (float !window_height)
 

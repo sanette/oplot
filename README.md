@@ -29,3 +29,8 @@ Mathematical plotting library for ocaml
 
 An official standalone GUI for `oplot`:
 [goplot](https://sanette.github.io/goplot/)
+
+## Examples
+
+The `top` directory contains examples that can be run from the ocaml
+toplevel.

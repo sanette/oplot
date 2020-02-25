@@ -404,8 +404,16 @@ let unit_normal a b c = norm (pvect (c -| b) (a -| b))
 
 (******************)
 
+let reset_gllist = ref false
+
 let light_on = ref true
+
+let get_light () = !light_on
     
+let toggle_light () =
+  light_on:= not !light_on;
+  reset_gllist := true
+      
 let switch_light bool = match bool with
   | true -> begin
       Gl.enable `lighting; 
@@ -796,8 +804,6 @@ let sdl_screenshot ?(output = bmp_output) () =
 (********************)
 (* tracé des objets *)
 (********************)
-
-let reset_gllist = ref false
 
 let set_line_width ?(dev = !default_device) w = 
   match dev with
@@ -1882,9 +1888,11 @@ let rec has_latex sh = match sh with
 
 (* Transforme le fichier fig en eps/pdf. utiliser psmerge pour plusieurs pages /
    pauses?  Mais incompatible xfig ?? (ou utiliser les depths ?) *)
-let write_eps ?(pdf=true) sh =
+let write_eps ?output ?(pdf=true) sh =
   let convert = if pdf then fig2pdf else fig2eps in
-  let output = if pdf then pdf_output_file else eps_output_file in
+  let output = match output with
+    | Some s -> s
+    | None -> if pdf then pdf_output_file else eps_output_file in
   if has_latex sh
   then (shell "%s --input=%s %s" convert latex_header xfig_output_file;
         (* attention xfig ecrit les caractères non ascii sous la forme \xxx; il
@@ -1963,13 +1971,13 @@ let ( & ) a b = List.append a b
 
 (* interactif: wrapper/raccourci pour tracer une liste d'objets *)
 let display ?(dev = !default_user_device) ?(fscreen = false) 
-    ?(output = bmp_output) sh = 
+    ?output sh = 
   match dev with
     X11_d -> disp (Sheet sh) ~dev:X11
   | GL_d ->  disp (Sheet sh) ~dev:GL ~fscreen
   | FIG_d -> disp (Sheet sh) ~dev:FIG
-  | EPS_d -> (disp (Sheet sh) ~dev:FIG; write_eps ~pdf:false (Sheet sh))
-  | PDF_d -> (disp (Sheet sh) ~dev:FIG; write_eps ~pdf:true (Sheet sh))
+  | EPS_d -> (disp (Sheet sh) ~dev:FIG; write_eps ?output ~pdf:false (Sheet sh))
+  | PDF_d -> (disp (Sheet sh) ~dev:FIG; write_eps ?output ~pdf:true (Sheet sh))
   | XFIG_d ->
     (disp (Sheet sh) ~dev:FIG;
      shell "xfig -correct_font_size -zoom 1 %s &" xfig_output_file)
@@ -1977,12 +1985,12 @@ let display ?(dev = !default_user_device) ?(fscreen = false)
     (disp (Sheet sh) ~dev:FIG;
      write_eps ~pdf:false (Sheet sh);
      match psviewer with
-     | Some "gv" -> shell "gv --media=BBox --scalebase=2 --watch %s &" eps_output_file
+     | Some "gv" -> shell "gv --media=BBox --watch %s &" eps_output_file
      | Some "kghostview" -> shell "kghostview --portrait %s &" eps_output_file
      | Some prog -> shell "%s %s &" prog eps_output_file
      | None -> print_endline "No postscript viewer found"
     )
-  | BMP_d -> write_bmp ~output (Sheet sh)
+  | BMP_d -> write_bmp ?output (Sheet sh)
   | PNG_d -> raise (Not_implemented "png")
   | IMG_d ->
     (write_bmp (Sheet sh);
