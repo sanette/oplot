@@ -24,8 +24,11 @@ Mathematical plotting library for ocaml
   + xfig files
   + image screenshots
 
+## Documentation
+
 [API documentation](https://sanette.github.io/oplot/oplot/Oplot/index.html).
 
+## GUI
 
 An official standalone GUI for `oplot`:
 [goplot](https://sanette.github.io/goplot/)

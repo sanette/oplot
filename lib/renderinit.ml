@@ -182,12 +182,14 @@ let map_option f = function
 (* first line of output from the shell command *)
 let string_of_process command =
   let proc = Unix.open_process_in command in
-  let res = input_line proc in
-   match Unix.close_process_in proc with
-   | Unix.WEXITED 0 -> Some res
-   | Unix.WEXITED e -> Debug.print "Command %s exited with error %u" command e; None
-   | _ ->  Debug.print "Command %s exited with some error" command; None
-
+  try let res = input_line proc in
+    match Unix.close_process_in proc with
+    | Unix.WEXITED 0 -> Some res
+    | Unix.WEXITED e -> Debug.print "Command %s exited with error %u" command e; None
+    | _ ->  Debug.print "Command %s exited with some error" command; None
+  with | End_of_file ->
+    Debug.print "Command %s has no output" command; None
+    
 (* try to obtain the monitor's DPI on linux systems. Does not work with multiple
    monitors *)
 let get_pixel_height_from_xrandr () =

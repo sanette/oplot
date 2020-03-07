@@ -118,7 +118,7 @@ type plot_object =
   | Axis of axis
   | Color of color
   | Text of text
-  | Matrix of imatrix * (view option) (* utiliser une texture à la place *)
+  | Matrix of imatrix (* utiliser une texture à la place *)
   | Grid of grid * gllist
   | Surf3d of surf3d * gllist
   | Curve3d of curve3d * gllist
@@ -136,6 +136,8 @@ type plot_object =
    résolution de la fenêtre, et d'adapte aux grandes dérivées. *)
 (* inclure les transitions dans le mécanisme de pause ? cf zoom *)
 
+(* float entre 0 et 1 *)
+type colormap = color -> float -> color
 
 type coord = X | Y
 
@@ -178,6 +180,9 @@ Text ( { pos = point (x0, y0) ; text = s ; size = size ;
 
 (*** interactif: crée un objet View ***)
 let view x0 y0 x1 y1 = View ( Some (point (x0, y0) , point (x1,y1)))
+
+let get_view view_ref = User (fun v _ ->
+    view_ref := v)
 
 let view2of3 (p1,p2) = Some (point(p1.Point3.x, p1.Point3.y), point(p2.Point3.x, p2.Point3.y))
 
@@ -357,7 +362,7 @@ let label_dot_plot ?(dot = just_a_dot) ?(offset=0.005) ?view l =
   (v :: (loop l []))
 
 
-let matrix_plot f ?(width = !window_width/4) ?(height = !window_height/4) x0 y0 x1 y1 =
+let matrix_plot_f f ?(width = !window_width/4) ?(height = !window_height/4) x0 y0 x1 y1 =
   let fm = Array.make_matrix height width 0. in
   let dx = (x1 -. x0) /. float width 
   and dy = (y1 -. y0) /. float height in
@@ -379,7 +384,7 @@ let matrix_plot f ?(width = !window_width/4) ?(height = !window_height/4) x0 y0 
       m.(i).(j) <- int_of_float (255. *. (fm.(i).(j) -. !zmin) /. dz)
     done;
   done;
-  Matrix (m, Some (point(x0,y0), point(x1,y1)))
+  Matrix m
 
 (* variante... *)
 let grid_plot f ?(wire=true) ?(width = !window_width/20) ?(height = !window_height/20) x0 y0 x1 y1 =

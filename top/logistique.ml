@@ -30,9 +30,9 @@ let rec trace ~progress x0 x1 step v dev =
 
 let logistique ?(progress=true) ~step v dev =
   trace ~progress (fst v).x (snd v).x step v dev;
-  copy_back_buffer ();; (* thanks to this, the picture is not erased in the
-                           second display invocation below when there is no
-                           Pause. *)
+  copy_back_buffer ();;
+(* thanks to this, the picture is not erased in the second display invocation
+   below when there is no Pause. *)
 
 let v = view 2.4 0. 4. 1.;;
 let a = axis 2.5 0.;;

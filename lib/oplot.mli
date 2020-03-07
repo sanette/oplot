@@ -143,7 +143,7 @@ module Plt : sig
     | Text of text
     (** Position a text at some (x,y) coordinate. *)
   
-    | Matrix of imatrix * (view option)
+    | Matrix of imatrix
     (** Checkboard-like matrix view with 0-255 greyscale. *)                  
   
     | Grid of grid * gllist
@@ -467,6 +467,7 @@ module Internal : sig
       
   val has_anim : plot_object -> bool
   val gllist_empty : unit -> gllist
+  val get_view : view ref -> plot_object
 
   (* type user_device
    * val x11 : user_device
@@ -520,6 +521,8 @@ module Internal : sig
   val iscale : int -> int
   (** multiply by the GL_SCALE and round *)
 
+  val point_of_pixel : int * int -> view option -> float * float
+
   val set_line_width : ?dev:plot_device -> float -> unit
   val set_point_size : ?dev:plot_device -> float -> unit
 
@@ -548,7 +551,13 @@ module Internal : sig
 
   val oplot_dir : string
   (** The directory shared by oplot and goplot for various assets *)
-    
+
+  val home_dir : string
+    (** The [$HOME/.oplot] directory *)
+
+  val first_time : unit -> bool
+  (** Whether the [$HOME/.oplot] directory already existed at startup *)
+
   val has_latex : bool
   (** Whether LaTeX is detected on the computer *)
   
@@ -560,10 +569,7 @@ module Internal : sig
   
   val has_fig2dev : bool
   (** Whether [fig2dev] is detected on the computer *)
-  
-  val first_time : unit -> bool
-  (** Whether the [$HOME/.oplot] directory already exists *)
-    
+      
 end
 
 

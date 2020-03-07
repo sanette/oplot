@@ -25,7 +25,10 @@ let force_refresh = ref false
 let gl_scale = Renderinit.gl_scale
 
 let xfig_scale = 45.
-  
+(* Un point xfig vaut 1/80 inch. Mais attention "When exporting to EPS,
+   PostScript or any bitmap format (e.g. GIF), the line thickness is reduced to
+   1/160 inch (0.159mm) to "lighten" the look." *)
+
 (* (bx0,by0, bx1,by1) : coordonnées logiques (et non physiques) de la fenêtre *)
 let bounding_box dev =
   match dev with
@@ -204,7 +207,10 @@ let quit ?(dev = !default_device) () =
   with e ->
     Debug.print "Warning: quit wasn't clean.";
     if Debug.debug then raise e
-    
+
+(* Set this to true to force re-creating all gllists *)
+let reset_gllist = ref false
+
     
 (**********************************************************)
 (************ fin inits opengl ****************************)
@@ -217,7 +223,7 @@ let quit ?(dev = !default_device) () =
 (*** à améliorer en suivant l'exemple de Feedback.html ***)
 (*** http://www.opengl.org/resources/code/samples/mjktips/Feedback.html ***)
 (*** en particulier, urgent: trier les primitives en fonction de la profondeur
-     !, et puis faire les dégradés... ***)
+   !, et puis faire les dégradés... ***)
 
 let text_token = 1.
 
@@ -232,20 +238,23 @@ exception Feedback_Buffer_Overflow
 let feedback_render draw_proc = 
   (* on augmente progressivement la taille du buffer en 2^i si nécessaire...
      (pas très fin, évidemment) *)
-  let rec loop i = 
+  let rec loop i =
+    reset_gllist := true; (* gllists are not rendered in feedback mode. *)
+    gl_init ();
     let r = Raw.create_static `float ~len:(1 lsl i) in
     GlMisc.feedback_buffer ~mode:`_3d_color r;    
     ignore (GlMisc.render_mode `feedback);
     GlDraw.color (float_of_color default_color);
     Debug.print "draw in feedback mode...";
     draw_proc ();
+    Debug.print "done";
     let num = GlMisc.render_mode `render in
-    if num = -1 
+    if num < 0 
     then (
       if i<31 then (Raw.free_static r; loop (i+1))
       else raise Feedback_Buffer_Overflow)
     else begin 
-      Debug.print "Created feedback buffer of size: %d\n for %d objects."
+      Debug.print "Created feedback buffer of size: %d for %d objects."
         (1 lsl i) num;
       r,num end in
   loop 16;; (*on commence avec une taille de 2^16=65536*)
@@ -254,7 +263,6 @@ let get_vertex r pos =
   let coord = (Raw.gets_float r ~pos:pos ~len:3) in
   let colour = (Raw.gets_float r ~pos:(pos+3) ~len:4) in
     (coord,colour)
-
 
 let point_of_vertex (coord, _colour) =
   { x = coord.(0) ; y = coord.(1) }
@@ -365,7 +373,7 @@ let feedback_parse_pass r n0 =
     if token = text_token then raise (Not_implemented "text token")
     else raise (Not_implemented "unknown pass-through")
 
-let depth_compare (_,d1) (_,d2) = 
+let depth_compare (_,d1 : plot_object list * float ) (_,d2) = 
   if d1 > d2 then -1 else if d1 < d2 then 1 else 0
 
 (* renvoie une liste d'objets, directement visualisable avec display
@@ -403,8 +411,6 @@ let pvect (x0, y0, z0) (x1, y1, z1) =
 let unit_normal a b c = norm (pvect (c -| b) (a -| b))
 
 (******************)
-
-let reset_gllist = ref false
 
 let light_on = ref true
 
@@ -478,13 +484,13 @@ let gety p = p.y
    à l'envers: -- on doit pouvoir faire plus simple *)
 let mymap f pl c = 
   match pl with
-      [] -> raise Empty_list
-    |  p :: ppl -> let myget = 
-  match c with
-      X -> getx
-    | Y -> gety in
-       let xlist l = List.rev_map myget l in 
-  List.fold_left f (myget p) (xlist ppl)
+    [] -> raise Empty_list
+  |  p :: ppl -> let myget = 
+                   match c with
+                     X -> getx
+                   | Y -> gety in
+    let xlist l = List.rev_map myget l in 
+    List.fold_left f (myget p) (xlist ppl)
 
 let fmin x y : float = if y < x then y else x
 let fmax x y : float = if y > x then y else x
@@ -508,7 +514,11 @@ let ymax pl = mymap fmax pl Y
 (* Attention la liste devient inversée (pour plus d'efficacité) !! *)
 let rescale_list pl v (bx0,by0,bx1,by1) = (* changer le nom *)
   match v with
-  | None -> raise View_expected
+  | None -> if pl <> [] then raise View_expected
+    else begin
+      Debug.print "Warning: no view provided for rescale_list";
+      []
+    end
   | Some  ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) ->
     let (xmin,xfactor) = if x1 = x0 then ( (-0.5) , bx1 -. bx0) else ( x0 , ( bx1 -. bx0 ) /. ( x1 -. x0 ) ) in
     let (ymin,yfactor) = if y1 = y0 then ( (-0.5) , by1 -. by0) else ( y0 , ( by1 -. by0 ) /. ( y1 -. y0 ) ) in
@@ -546,7 +556,7 @@ let point_of_draw (dx,dy) (bx0,by0,bx1,by1) = function
 (* le deuxième arg est un view *)
 let point_of_pixel (dx,dy) = function
     None -> raise View_expected
-  | Some   ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) ->
+  | Some   ({ x=x0 ; y=y0 },{ x=x1 ; y=y1 }) ->
     float dx *. ( x1 -. x0 ) /. !fwindow_width,
     float dy *. ( y1 -. y0 ) /. !fwindow_height
 
@@ -559,22 +569,24 @@ let point_of_pixel (dx,dy) = function
    zéro ! *)
 let rec maxview po = 
   match po with
-      Points pl | Poly pl ->
- Some (point(mymap fmin pl X, mymap fmin pl Y), 
-       point(mymap fmax pl X, mymap fmax pl Y))
-    | Lines pll -> maxview (Points (List.flatten pll))
-    | View v -> v
-    | Axis { center={x=x0 ; y=y0}; _ } -> Some (point(x0 -. 1., y0 -. 1.), 
-          point(x0 +. 1., y0 +. 1.))
-    | Text t -> let (x,y)=(t.pos.x, t.pos.y) in
- Some (point(x -. 1., y -. 1.),
-       point(x +. 1., y +. 1.))
-    | Matrix (_,v) -> v
-    | Grid ((_,v3,_),_) -> view2of3 v3
-    | Surf3d ((_,_,_,  v3,_),_) -> view2of3 v3
-    | Adapt (_,f) -> maxview (f None) 
-    | User _ ->  Some (point(-.1., -.1.), point(1.,1.)) (* mieux que rien ... *)
-    | _ -> None
+  | Points pl | Poly pl ->
+    if pl = [] then None
+    else
+      Some (point(mymap fmin pl X, mymap fmin pl Y), 
+            point(mymap fmax pl X, mymap fmax pl Y))
+  | Lines pll -> maxview (Points (List.flatten pll))
+  | View v -> v
+  | Axis { center={x=x0 ; y=y0}; _ } -> Some (point(x0 -. 1., y0 -. 1.), 
+                                              point(x0 +. 1., y0 +. 1.))
+  | Text t -> let (x,y)=(t.pos.x, t.pos.y) in
+    Some (point(x -. 1., y -. 1.),
+          point(x +. 1., y +. 1.))
+  | Matrix _ -> None
+  | Grid ((_,v3,_),_) -> view2of3 v3
+  | Surf3d ((_,_,_,  v3,_),_) -> view2of3 v3
+  | Adapt (_,f) -> maxview (f None) 
+  | User _ -> None  (* Some (point(-.1., -.1.), point(1.,1.)) *) (* mieux que rien ... *)
+  | _ -> None
 
 
 
@@ -586,7 +598,7 @@ let rec maxview po =
 (* vérifier le fonctionnement des view. refaire en utilisant depth de xfig ? *)
 let gl2fig gldraw_func plot_func =
   let was_init = List.mem `VIDEO (Sdl.was_init ()) in
-  gl_init ();
+  (* gl_init (); *)
   (*enter3d v3;*)
   (*print_endline "enter3D OK";*)
   let (r,num) = feedback_render gldraw_func in
@@ -834,10 +846,28 @@ let set_color ?(dev = !default_device) c =
      par interpolation ?? ou remplacer par svg ? *)
   current_color := c
 
+let linear_cmap color1 color2 x =
+  let f x u1 u2 = x *. u2 +. (1. -. x) *. u1 in
+  {r = f x color1.r color2.r;
+   g = f x color1.g color2.g;
+   b = f x color1.b color2.b}
+  
+(* du noir à la 'color '*)
+let from_black_cmap = linear_cmap black
 
-(* TODO remove points outside bbox *)
-let draw_points pl ?(dev = !default_device) ?dep view = 
-  let  ps = rescale_list pl view (bounding_box dev) in
+let from_white_cmap = linear_cmap white
+    
+(* de la 'color' au blanc *)
+let to_white_cmap color = linear_cmap color white
+
+let to_black_cmap color = linear_cmap color black
+
+
+let draw_points pl ?(dev = !default_device) ?dep ?(pixel_size=2) view =
+  (* xfig reduces line width by a factor of two to "lighten" the look. For
+     isolated points, we scale it back to have adjacent points slightly
+     overlapping (instead of being clearly disjoint).  *)
+  let ps = rescale_list pl view (bounding_box dev) in
   match dev with
   | X11 ->
     Graphics.plots 
@@ -847,12 +877,16 @@ let draw_points pl ?(dev = !default_device) ?dep view =
     GlDraw.begins `points;
     List.iter GlDraw.vertex2 ps;
     GlDraw.ends ()
-  | FIG ->
+  | FIG -> (* we crop points outside the view *)
+    let ps = match view with
+      | Some v -> rescale_list (lines_crop pl v |> List.flatten)
+                    view (bounding_box dev)
+      | None -> Debug.print "draw_points needs a view"; ps in
     let depth = get_depth dep
     and co =  (fig_of_color !current_color) in
     List.iter (fun (x,y) -> Printf.fprintf !xfig_main_channel 
-                  "2 1 0 1 %d %d %d -1 -1 0.000 0 0 -1 0 0 1\n" 
-                  co co depth;
+                  "2 1 0 %u %d %d %d -1 -1 0.000 0 0 -1 0 0 1\n" 
+                  pixel_size co co depth;
                 Printf.fprintf !xfig_main_channel "\t%d %d\n" 
                   (int_of_float x) (int_of_float y))
       ps
@@ -883,7 +917,7 @@ let draw_lines pl ?(dev = !default_device) ?dep view =
       | None -> raise View_expected
       | Some v -> lines_crop pl v in
     begin
-      if Debug.debug &&  List.length pls > 1
+      if Debug.debug && List.length pls > 1
       then print_endline "Cropping overflowing Lines for FIG rendering";
       List.iter (fun pl -> draw_lines pl ~dev ?dep view) pls
     end
@@ -919,21 +953,24 @@ let draw_poly pl ?(dev = !default_device)  ?border_color ?dep view =
                   "\t%d %d\n" (int_of_float x) (int_of_float y)) pps
 
 (* modifier les coords GL *)
-let draw_matrix ?(dev = !default_device) m view =
+let draw_matrix ?(dev = !default_device) ?(cmap = from_white_cmap)
+    ?(min_value=0) ?(max_value=255) m =
   let h = Array.length m
   and w = Array.length m.(0) in (* w,i=lignes, h,j=colonnes *)
+  let dc = float (max_value - min_value) in
+  let cmap = cmap !current_color in
   begin
-    let { r=r; g=g; b=b } = !current_color in
     match dev with
     | X11 -> raise (Not_implemented "X11 draw_matrix")
     | GL -> let dx = 1. /. float w
       and dy = 1. /. float h in
       for i=0 to (h-1) do
         for j=0 to (w-1) do
-          let c = (float m.(i).(j) /. 255.) in
+          let c = (float (m.(i).(j) - min_value) /. dc) in
           let x  = (float j) *. dx
           and y = (float i) *. dy in
-          GlDraw.color (r *. c, g *. c, b *. c);
+          let { r; g; b } = cmap c in
+          GlDraw.color (r, g, b);
           GlDraw.begins `quads;
           GlDraw.vertex2(x, y);
           GlDraw.vertex2(x, y +. dy);
@@ -942,19 +979,20 @@ let draw_matrix ?(dev = !default_device) m view =
           GlDraw.ends ()
         done;
       done;
-    | FIG -> let (xmin,ymin,xmax,ymax) = 
-               (match view with
-                | None -> raise View_expected
-                | Some  ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) -> x0,y0,x1,y1)
+    | FIG -> let (xmin,ymin,xmax,ymax) = (0., 0., float w, float h)
+    (* (match view with
+     *  | None -> raise View_expected
+     *  | Some  ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) -> x0,y0,x1,y1) *)
       in
+      let view = Some ( {x=xmin; y=ymin}, {x=xmax; y=ymax}) in
       let dx = (xmax -. xmin) /. float w
       and dy = (ymax -. ymin) /. float h in
       for i=0 to (h-1) do
         for j=0 to (w-1) do
-          let c = (float m.(i).(j) /. 255.) in
+          let c = (float (m.(i).(j) - min_value) /. dc) in
           let x = xmin +. (float j) *. dx
-          and y = ymin +. (float i) *. dy in
-          set_color ~dev { r = r *. c; g = g *. c; b = b *. c};
+          and y = ymin +. (float i) *. dy in     
+          set_color ~dev (cmap c);
           draw_poly ~dev [
             { x = x; y = y };
             { x = x; y = y +. dy};
@@ -1659,7 +1697,7 @@ let rec object_plot ?(addcounter = true) ~dev po view  =
   | Axis a -> draw_axis a view ~dev
   | Color c -> set_color c ~dev
   | Text t -> draw_text view t ~dev
-  | Matrix (m,_) -> draw_matrix m view ~dev
+  | Matrix m -> draw_matrix m ~dev
   | Grid ((m,v3,w),gl) -> let v3 = initialize_view3 v3 in
     draw_grid ~wire:w gl (object_plot ~addcounter:false) m v3 ~dev
   (* pas vraiment besoin de passer !current_view3d partout *)
