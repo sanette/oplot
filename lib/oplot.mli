@@ -222,10 +222,27 @@ module Plt : sig
   (** If [f] is a function two parameters [t] and [x], then [anim_plot f x0 x1]
      will generate an animation of the graph of the functions [f t] for [t]
      evolving with real time. The resulting object is of type {!User}. *)
+
+  val dot_plot : ?dot:(float -> float -> plot_object) ->
+    ?view:plot_object -> (float * float) list -> plot_object list
+  (** [dot_plot ~dot list] draws a dot at each position [(x,y)] in the given
+     [list]. Each dot is plotted using the [dot] function. By default, if [~dot]
+     is not specified, a single pixel is drawn. Another possibility is to use
+      the{!diamond} function. *)
+
+  val diamond : ?size:float -> float -> float -> plot_object
+  (** Draw a small diamond (lozange) at the given [x y] position. *)
+
+  val box : float -> float -> float -> float -> plot_object
+  (** [box x0 y0 x1 y1] draws a filled box given by the diagonal points [x0,y0]
+     and [x1,y1]. *)
   
   val text :
     string -> ?size:int -> ?align:align -> float -> float -> plot_object
   (** [text s x y] draws the string [s] at the position ([x],[y]). *)
+
+  val move_text : text -> point -> unit
+  (** Move text at position given by [point]. *)
   
   val latex:
     string -> ?size:int -> ?align:align -> float -> float -> plot_object
@@ -464,7 +481,13 @@ module Internal : sig
    * val rotate : float -> float -> float -> float -> float -> plot_object *)
 
   (** {2 Plot objects} *)
-      
+
+  val reset_time : ?t0:int -> unit -> unit
+  (* Set to zero (or t0) the time used for animated objects. Just after
+     resetting time this way, a call to [elapsed ()] will return 0 (or t0). This
+     is only useful in [User] objects, because [reset_time()] is always called
+     when opening a new window.  *)
+  
   val has_anim : plot_object -> bool
   val gllist_empty : unit -> gllist
   val get_view : view ref -> plot_object

@@ -71,13 +71,15 @@ type text_image =  ([ `luminance_alpha ], [ `ubyte ]) GlPix.t * int * int
 
 type align = CENTER | LEFT | RIGHT
 type text_flag = Normal | Latex
-type text = { pos : point ; text : string ; size : int ; 
+type text = { mutable pos : point ; text : string ; size : int ; 
        align : align ; flag : text_flag ;
        mutable pix : (text_image option) }
 (* le champ optionnel modifiable "pix" permet de stocker l'image une fois
    calculée.
 *)
 
+let move_text text pos = text.pos <- pos
+    
 type image =  ([ `rgba ], [ `ubyte ]) GlPix.t * int * int
 
 type latex = { lpos : point ; ltext : string ; lsize : int ; 
@@ -201,8 +203,8 @@ let point_list f x0 x1 ?(pas = (x1 -. x0) /. !fwindow_width) () =
 
 (* attribue un type (Points ou Lines) à une liste de points *)
 let points_of_list pl = Points pl
-let lines_of_list  pl = Lines [pl]
-let poly_of_list  pl = Poly pl (*utile ?*)
+let lines_of_list pl = Lines [pl]
+let poly_of_list pl = Poly pl (*utile ?*)
 
 (*** interactif: crée un objet Points à partir d'une fonction ***)
 (* on pourrait faire:
@@ -321,11 +323,14 @@ let just_a_dot x y = points_of_list [point (x,y)]
 
 let diamond ?(size=0.01) x y = 
   let epsilon=size /. 2. in
-    Poly [point (x -. epsilon, y);
-   point (x, y +. epsilon);
-   point (x +. epsilon, y);
-   point (x, y -. epsilon);
-   point (x -. epsilon, y)]
+  Poly [point (x -. epsilon, y);
+        point (x, y +. epsilon);
+        point (x +. epsilon, y);
+        point (x, y -. epsilon);
+        point (x -. epsilon, y)]
+
+let box x0 y0 x1 y1 =
+  Poly [ {x=x0; y=y0}; {x=x1; y=y0}; {x=x1; y=y1}; {x=x0; y=y1}]
 
 let find_view l = 
 let rec loop xmax xmin ymax ymin l =

@@ -20,16 +20,21 @@ let oplot_dir =
         (* = cas où la librairie est utilisée par goplot *)
         -> Filename.concat (dirname (dirname exe)) "share/goplot"
       | "goplot.exe", "gui"       (* = lancement par dune exec gui/goplot.exe *)
-      | "utop.exe", ".utop"       (* = lancement par dune utop *)
-        -> Filename.concat (dirname (dirname exe)) "share"
+      (* | "utop.exe", ".utop"       (\* = lancement par dune utop *\)
+       *   -> Filename.concat (dirname (dirname exe)) "share" *)
 
-      | _ -> let system = Unix.open_process_in "opam config var prefix" in
-        let res = input_line system in
-        match Unix.close_process_in system with
-        | Unix.WEXITED 0 -> Filename.concat res "share/oplot"
-        | _ -> failwith 
-                 "Please tell me where the oplot directory is, by setting the \
-                  environment variable OPLOTDIR." 
+      | _ -> try
+          let system = Unix.open_process_in "opam config var prefix" in
+          let res = input_line system in
+          match Unix.close_process_in system with
+          | Unix.WEXITED 0 -> Filename.concat res "share/oplot"
+          | _ -> failwith 
+                   "Please tell me where the oplot directory is, by setting the \
+                    environment variable OPLOTDIR."
+        with
+          _ ->
+          Debug.print "No oplot installation found. Using current dir.";
+          Filename.current_dir_name
     end
   | e -> raise e
 
@@ -77,6 +82,7 @@ let init_font_path ?(fontname="FreeSans.ttf") var =
     [ fontname;
       (concat oplot_dir fontname);
       (concat "/usr/share/fonts/truetype/freefont/" fontname);
+      (concat "/usr/share/fonts/truetype/dejavu/" fontname);
       (concat "/usr/share/fonts/TTF/" fontname);
       (concat "/usr/share/vlc/skins2/fonts/" fontname) ] in
   let rec loop l = match l with
@@ -171,10 +177,16 @@ let has_fig2dev = has_exe "fig2dev"
 
 let fig2ps =
   if has_exe "fig2ps" then "fig2ps"
-      else let local = concat oplot_dir "fig2eps" in
-        if (Unix.stat local).st_perm <> 0o755
-        then Unix.chmod local 0o755;
-        local
+  else let local = concat oplot_dir "fig2eps" in
+    if Sys.file_exists local
+    then begin
+      if (Unix.stat local).st_perm <> 0o755
+      then Unix.chmod local 0o755;
+      local
+    end else begin
+      print_endline "WARNING: fig2ps not found. You will not be able to export to ps or pdf.";
+      "fig2ps"
+    end
 let fig2eps = fig2ps ^ " --eps --noforcespecial --nogv"
 let fig2pdf = fig2ps ^ " --pdf --noforcespecial --nogv"
 

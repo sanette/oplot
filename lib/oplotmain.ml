@@ -22,8 +22,6 @@ open Renderinit
 
 let force_refresh = ref false
 
-let gl_scale = Renderinit.gl_scale
-
 let xfig_scale = 45.
 (* Un point xfig vaut 1/80 inch. Mais attention "When exporting to EPS,
    PostScript or any bitmap format (e.g. GIF), the line thickness is reduced to
@@ -49,8 +47,9 @@ let bounding_box dev =
      dernière initialisation de sdl. Donc réinitialisé au lancement de
      sdl_init ***)
 let time () = Sdltimer.get_ticks () - !time_delay
-let elapsed () = time () - !Renderinit.initial_time
-
+let elapsed () = time () - !initial_time
+let reset_time ?(t0 = 0) () = initial_time := time () - t0
+      
 (**********************************************************)
 (**************** inits opengl ****************************)
 (**********************************************************)
@@ -1531,7 +1530,7 @@ let sdl_key key =
      -> position3d := default_position3d;
      zoom3d := default_zoom3d
    | Sdlkey.KEY_TAB -> GlMat.pop (); GlMat.push (); 
-     initial_time:=time()
+     reset_time ()
    |Sdlkey.KEY_l when (modifier land Sdlkey.kmod_ctrl) <> 0 ->
      light_on := not !light_on;
      reset_gllist := true;
@@ -1650,7 +1649,7 @@ let do_freeze ?(dev = !default_device) t =
              | SDL -> sdl_freeze t;
                pause_pass := !counter
              | GLUT -> Iglut.freeze t
-             | GTK -> () (* ??? *))
+             | GTK -> () (* ??? TODO manage time delay *))
   | FIG -> ();; (* ajouter warning *)
 
 let do_pause ?(dev = !default_device) t = 
@@ -1716,7 +1715,8 @@ let rec object_plot ?(addcounter = true) ~dev po view  =
   | Clear c -> clear_sheet c ~dev
   | View _ -> ()
   | User f -> exec_user f view dev
-  | _ -> raise ( Not_implemented "object unknown" )
+  | Sheet _ ->
+    raise (Invalid_argument "object_plot cannot accept Sheet argument")
 
 
 (* use t as a realtime parameter, in seconds *)
@@ -1990,12 +1990,12 @@ let disp ?(dev = !default_device) ?(fscreen = false) sh  =
         Iglut.mainloop sh
       | SDL -> 
         if fscreen <> !fullscreen then toggle_fullscreen ();
-        initial_time:=time();
+        reset_time ();
         GlClear.clear [ `color ; `depth ];
         Sdlgl.swap_buffers ();
         sdl_mainloop sh wait 
       | GTK -> (* ne pas utiliser comme ca...*) 
-        initial_time:=time();
+        reset_time ();
         (* let wait  = not (has_anim sh) in *)
         ignore(gtk_mainloop sh))
   | FIG -> xfig_init (); (* faire un try pour refermer le fichier en cas d'erreur *)
