@@ -13,10 +13,10 @@ let gl_scale = ref 2.
 
 (* sorties graphiques utilisables par l'utilisateur *)
 type user_device = X11_d | GL_d | FIG_d | XFIG_d | EPS_d | PDF_d
-     | GV_d | BMP_d | PNG_d | IMG_d 
+     | GV_d | BMP_d | PNG_d | IMG_d
 (* user aliases *)
-let x11 = X11_d 
-and gl = GL_d 
+let x11 = X11_d
+and gl = GL_d
 and fig = FIG_d
 and xfig = XFIG_d
 and eps = EPS_d
@@ -33,11 +33,11 @@ let default_user_device = ref GL_d
 let set_device devname =
   default_user_device := devname;
   default_device := List.assoc devname
-      [ (X11_d , X11) ; 
-        (GL_d , GL) ; 
-        (FIG_d , FIG) ; 
-        (XFIG_d , FIG) ; 
-        (EPS_d , FIG) ; 
+      [ (X11_d , X11) ;
+        (GL_d , GL) ;
+        (FIG_d , FIG) ;
+        (XFIG_d , FIG) ;
+        (EPS_d , FIG) ;
         (GV_d , FIG) ;
         (BMP_d , GL) ;
         (PNG_d , GL) ;
@@ -49,7 +49,7 @@ let default_gl = ref SDL
 let set_default_gl x = default_gl := x
 
 (* w et h comprennent les marges *)
-let resize_window w h = 
+let resize_window w h =
   let (w,h) = (max (w - !left_margin - !right_margin) 5,
                max (h - !top_margin - !bottom_margin) 5) in
   window_width:=w; fwindow_width:= float w;
@@ -69,16 +69,16 @@ let mouse_y = ref 0
 let frame_length = ref (1000 / 29)  (* 29 FPS *)
 let get_frame_length () = !frame_length
 let set_frame_length x = frame_length := x
-    
-let start_time = ref 0;; 
+
+let start_time = ref 0;;
 (* utilisé pour réguler l'affichage dans les boucles principales *)
 
-let initial_time = ref 0;; 
+let initial_time = ref 0;;
 
 (* pour geler le temps pendant les freezes *)
 let time_delay = ref 0
 
-let counter = ref 0;; 
+let counter = ref 0;;
 (* numero de l'objet courant. On utilise deux numéros pour un objet
    axis. Ca permet de séparer le texte des axes *)
 
@@ -97,7 +97,7 @@ let do_not_draw = ref false;; (* used to stop drawing at some point *)
 let pause_pass = ref 0;; (* how many objects to bypass before pausing *)
 (* redondantes variables ? *)
 
-let pause_init () = 
+let pause_init () =
   pause_time := None;
   resume_pause := false;
   do_not_draw := false;
@@ -125,12 +125,12 @@ let rgb_of_color c = let (r,g,b) = int_of_color c in Graphics.rgb r g b
 
 (* faire un tableau array pour les 5?? couleurs *)
 let fig_colors = Array.make 543 0
-let init_fig_colors () = 
+let init_fig_colors () =
   Array.fill fig_colors 0 543 0;
   let rec loop i l = match l with
       [] -> ()
     | c::ll -> fig_colors.(i) <- c; loop (i+1) ll in
-    loop 0 
+    loop 0
       [  0x000000  ; (* black *)
        0x0000ff  ; (* blue *)
        0x00ff00  ; (* green *)
@@ -167,7 +167,7 @@ let init_fig_colors () =
 (* trouve l'indice de la première occurence d'un element dans un tableau . Sinon
    retourne -1 *)
 let mem array (elem : int) = let l = Array.length array in
-let rec loop i = if i = l then -1 
+let rec loop i = if i = l then -1
   else if array.(i) = elem then i else loop (i+1) in
   loop 0
 
@@ -178,7 +178,7 @@ let pr = Printf.printf
 let map_option f = function
   | Some x -> Some (f x)
   | None -> None
-    
+
 (* first line of output from the shell command *)
 let string_of_process command =
   let proc = Unix.open_process_in command in
@@ -189,7 +189,7 @@ let string_of_process command =
     | _ ->  Debug.print "Command %s exited with some error" command; None
   with | End_of_file ->
     Debug.print "Command %s has no output" command; None
-    
+
 (* try to obtain the monitor's DPI on linux systems. Does not work with multiple
    monitors *)
 let get_pixel_height_from_xrandr () =
@@ -222,7 +222,7 @@ let get_dpi_from_xrandr () =
   | _, None -> None
   | Some m, Some p -> let dpi = float p /. (float m /. 25.4) |> int_of_float in
     Some dpi
-    
+
 let get_dpi_from_xdpyinfo () =
   let line = string_of_process
       "xdpyinfo | grep resolution | awk '{print $2}'" in
@@ -248,7 +248,7 @@ let get_dpi () =
       Some (min d1 d2)
     end
     else Some d2
-     
+
 let init () =
   Debug.print "init";
   let default_dpi = 110 in
@@ -271,10 +271,10 @@ let init () =
   mouse_x := 0;
   mouse_y := 0;
   frame_length := (1000 / 29);
-  start_time := 0; 
-  initial_time := 0; 
+  start_time := 0;
+  initial_time := 0;
   time_delay := 0;
-  counter := 0; 
+  counter := 0;
   default_bg_color := white;
   current_color := blue;
   pause_init ();
@@ -284,7 +284,7 @@ let get_mouse_x () = !mouse_x
 let get_mouse_y () = !mouse_y
 let set_mouse_x x = mouse_x := x
 let set_mouse_y y = mouse_y := y
-    
+
 let get_window_height () = !Oplotdef.window_height
 
 let () = init ()

@@ -13,6 +13,8 @@
  (description "High-quality plotting of 2D usual mathematical functions, including animations and LaTeX formulas. Supports also 3D surfaces with interactive rotating.")
  (tags ("plot" "2D" "3D" "math"))
  (depends
+  conf-sdl-ttf
+  conf-sdl-image
   (ocamlsdl (>= 0.9.1))
   (lablgl (>= 1.06))
   (graphics (>= 4.05.0))

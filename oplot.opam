@@ -10,6 +10,8 @@ license: "GPL2"
 homepage: "https://github.com/sanette/oplot"
 bug-reports: "https://github.com/sanette/oplot/issues"
 depends: [
+  "conf-sdl-ttf"
+  "conf-sdl-image"
   "ocamlsdl" {>= "0.9.1"}
   "lablgl" {>= "1.06"}
   "graphics" {>= "4.05.0"}

@@ -7,9 +7,9 @@ Debug.print "* Loading oplotmain"
      mais il faut écrire l'interface ocaml!
 ***)
 
-(* utiliser pdflatex ? (cf le module ~/.inkscape/extensions/textext.py) 
+(* utiliser pdflatex ? (cf le module ~/.inkscape/extensions/textext.py)
 *)
-  
+
 open Points
 
 open Point2
@@ -30,13 +30,13 @@ let xfig_scale = 45.
 (* (bx0,by0, bx1,by1) : coordonnées logiques (et non physiques) de la fenêtre *)
 let bounding_box dev =
   match dev with
-      X11 -> ( 1. , 1. , !fwindow_width , !fwindow_height ) 
+      X11 -> ( 1. , 1. , !fwindow_width , !fwindow_height )
  (* ici logique=physique, à un décalage de 1 près *)
-    | GL -> ( 0. , 0. , 1. , 1.) 
+    | GL -> ( 0. , 0. , 1. , 1.)
  (* sous opengl le redimensionnement de la fenêtre est pris en compte
     séparément par le viewport *)
-    | FIG ->( 0. , xfig_scale *. 157.2 *. !fwindow_height /. 600. /. !gl_scale, 
-       xfig_scale *. 210. *. !fwindow_width /. 800. /. !gl_scale, 0. ) 
+    | FIG ->( 0. , xfig_scale *. 157.2 *. !fwindow_height /. 600. /. !gl_scale,
+       xfig_scale *. 210. *. !fwindow_width /. 800. /. !gl_scale, 0. )
  (* about a5 for 800x600 *)
 
 (*  ( 0. , 45. *. 200. , 45. *. 266.7 , 0. );; *)
@@ -49,7 +49,7 @@ let bounding_box dev =
 let time () = Sdltimer.get_ticks () - !time_delay
 let elapsed () = time () - !initial_time
 let reset_time ?(t0 = 0) () = initial_time := time () - t0
-      
+
 (**********************************************************)
 (**************** inits opengl ****************************)
 (**********************************************************)
@@ -68,7 +68,7 @@ let scale_window =
     end else print_endline "ALREADY SCALED! BUG"
 
 let () = scale_window ()
-    
+
 (* initialisation d'une fenêtre opengl par SDL *)
 let sdl_init ~show () =
   if List.mem `VIDEO (Sdl.was_init ()) then begin
@@ -82,8 +82,8 @@ let sdl_init ~show () =
       (* if !multisampling then Sdlgl.set_attr [ Sdlgl.MULTISAMPLEBUFFERS 1; *)
       (*             Sdlgl.MULTISAMPLESAMPLES 4]; *)
       Sdlvideo.set_video_mode
-        ~w:(!window_width + !left_margin + !right_margin) 
-        ~h:(!window_height + !top_margin + !bottom_margin) 
+        ~w:(!window_width + !left_margin + !right_margin)
+        ~h:(!window_height + !top_margin + !bottom_margin)
         [ `DOUBLEBUF ; `OPENGL ; `RESIZABLE]
       |> Sdlvideo.unlock ;
       Sdlwm.set_caption ~title:"Oplot - SDL Window" ~icon:"";
@@ -92,7 +92,7 @@ let sdl_init ~show () =
       Sdltimer.delay 50  (* car BUG:opengl n'est pas immédiatement opérationnel *)
     in
     (try crucial () with
-     | Sdlvideo.Video_exn _ -> 
+     | Sdlvideo.Video_exn _ ->
        begin
          Debug.print "Hum... let's try to close the window first and disable \
                       multisampling.";
@@ -100,7 +100,7 @@ let sdl_init ~show () =
          multisampling := false;
          Unix.sleep 1;
          (try crucial () with
-          | Sdlvideo.Video_exn _ -> 
+          | Sdlvideo.Video_exn _ ->
             begin
               Debug.print "Hum... let's try to again.";
               Sdl.quit ();
@@ -120,7 +120,7 @@ let sdl_init ~show () =
                               Sdlevent.videoresize_mask lor
                               Sdlevent.syswmevent_mask lor
                               Sdlevent.videoexpose_mask lor
-                              Sdlevent.active_mask)); 
+                              Sdlevent.active_mask));
     Sdlkey.enable_key_repeat ();
     window_open := true;
     Debug.print "sdl_init OK"
@@ -140,7 +140,7 @@ let draw_of_pixel (dx,dy) (bx0,by0,bx1,by1) =
    jour *)
 let gl_resize () =
   GlDraw.viewport ~x:0 ~y:0
-    ~w:(!window_width + !left_margin + !right_margin) 
+    ~w:(!window_width + !left_margin + !right_margin)
     ~h:(!window_height + !top_margin + !bottom_margin);
   GlMat.mode `projection;
   GlMat.load_identity ();
@@ -182,19 +182,19 @@ let gl_init ?(show=true) () = ( match !default_gl with
   Gl.flush();
   Debug.print "gl_init OK"
 
-let toggle_fullscreen () = 
-  let ok = Sdlwm.toggle_fullscreen () in 
+let toggle_fullscreen () =
+  let ok = Sdlwm.toggle_fullscreen () in
   if ok then fullscreen := (not !fullscreen)
 
-let close ?(dev = !default_device) () = 
+let close ?(dev = !default_device) () =
   (match dev with
    | X11 -> Graphics.close_graph()
    | GL -> (window_open := false;
             if !fullscreen then toggle_fullscreen ();
-            let close () = Sdltimer.delay 50; Sdl.quit() 
+            let close () = Sdltimer.delay 50; Sdl.quit()
             in try close ()
-            with 
-            | Sdlevent.Event_exn _ -> 
+            with
+            | Sdlevent.Event_exn _ ->
               Debug.print "Hum... trying again."; close ()
             | e -> raise e)
    | FIG -> raise (Not_implemented "FIG close")(* flush buffer *))
@@ -210,7 +210,7 @@ let quit ?(dev = !default_device) () =
 (* Set this to true to force re-creating all gllists *)
 let reset_gllist = ref false
 
-    
+
 (**********************************************************)
 (************ fin inits opengl ****************************)
 (**********************************************************)
@@ -234,31 +234,31 @@ exception Feedback_Buffer_Overflow
 (* faire un  gl_init (); avant, et un close() ~dev:GL; après...  *)
 (* draw_proc est un procédure qui lance les tracés opengl. *)
 (* retourne le buffer de feedback et le nombre d'éléments. *)
-let feedback_render draw_proc = 
+let feedback_render draw_proc =
   (* on augmente progressivement la taille du buffer en 2^i si nécessaire...
      (pas très fin, évidemment) *)
   let rec loop i =
     reset_gllist := true; (* gllists are not rendered in feedback mode. *)
     gl_init ();
     let r = Raw.create_static `float ~len:(1 lsl i) in
-    GlMisc.feedback_buffer ~mode:`_3d_color r;    
+    GlMisc.feedback_buffer ~mode:`_3d_color r;
     ignore (GlMisc.render_mode `feedback);
     GlDraw.color (float_of_color default_color);
     Debug.print "draw in feedback mode...";
     draw_proc ();
     Debug.print "done";
     let num = GlMisc.render_mode `render in
-    if num < 0 
+    if num < 0
     then (
       if i<31 then (Raw.free_static r; loop (i+1))
       else raise Feedback_Buffer_Overflow)
-    else begin 
+    else begin
       Debug.print "Created feedback buffer of size: %d for %d objects."
         (1 lsl i) num;
       r,num end in
   loop 16;; (*on commence avec une taille de 2^16=65536*)
 
-let get_vertex r pos = 
+let get_vertex r pos =
   let coord = (Raw.gets_float r ~pos:pos ~len:3) in
   let colour = (Raw.gets_float r ~pos:(pos+3) ~len:4) in
     (coord,colour)
@@ -269,8 +269,8 @@ let point_of_vertex (coord, _colour) =
 let depth_of_vertex (coord, _colour) =
   coord.(2)
 
-let color_of_vertex (_coord, colour) = 
-  let a = colour.(3) in 
+let color_of_vertex (_coord, colour) =
+  let a = colour.(3) in
     if a <> 1. then begin
       prerr_endline (Printf.sprintf "Feedback Alpha:%f\n" a);
       flush stderr;
@@ -278,14 +278,14 @@ let color_of_vertex (_coord, colour) =
     { r = colour.(0) ; g = colour.(1) ; b = colour.(2) }
 
 (* inutile *)
-let feedback_print r n = 
+let feedback_print r n =
   for i = 0 to (n-1) do
     Printf.printf "%d: %f\n" i (Raw.get_float r ~pos:i)
   done
 
 let () = Debug.print "Initialise feedback constants"
 
-let feedback_view () = 
+let feedback_view () =
   view (float !left_margin) (float !bottom_margin)
     (float (!window_width + !right_margin)) (float (!window_height + !top_margin))
 
@@ -302,14 +302,14 @@ let gl_line_reset_token = 1799.0
    feedback buffer. Doit commencer par gl_point_token.  Rem: fournit
    la liste à l'envers ! On donne aussi la profondeur moyenne.
 *)
-let feedback_parse_point r n0 nmax = 
+let feedback_parse_point r n0 nmax =
   let rec loop n c0 pl depsum nombre =
-    if (n >= nmax) || ((Raw.get_float r ~pos:n) <> gl_point_token) 
+    if (n >= nmax) || ((Raw.get_float r ~pos:n) <> gl_point_token)
     then (pl,depsum,nombre,n)
     else let v = get_vertex r (n+1) in
     let c = color_of_vertex v in
       if c <> c0 then (pl,depsum,nombre,n)
-      else let p = point_of_vertex v 
+      else let p = point_of_vertex v
     and d = depth_of_vertex v in
  loop (n + 1 + gl_vertex_size) c0 (p::pl) (depsum +. d) (nombre + 1) in
   let c0 = color_of_vertex (get_vertex r (n0+1)) in
@@ -323,9 +323,9 @@ let feedback_parse_point r n0 nmax =
    si le point final d'un segment a une couleur différente du point
    initial... car de toutes façons xfig ne gère pas les dégradés.
 *)
-let feedback_parse_line r n0 nmax = 
+let feedback_parse_line r n0 nmax =
   let rec loop n p0 c0 d0 pl depsum nombre =
-    if (n >= nmax) || ((Raw.get_float r ~pos:n) <> gl_line_token) 
+    if (n >= nmax) || ((Raw.get_float r ~pos:n) <> gl_line_token)
     then (pl,depsum,nombre,n)
     else let (v1,v2) = get_vertex r (n+1),
       get_vertex r (n+1+gl_vertex_size) in
@@ -335,7 +335,7 @@ let feedback_parse_line r n0 nmax =
       then (pl,depsum,nombre,n)
       else let p2 = point_of_vertex v2
     and d = depth_of_vertex v2 in
- loop (n+1+2*gl_vertex_size) p2 c0 d0 (p2::pl) (depsum +. d) (nombre + 1) 
+ loop (n+1+2*gl_vertex_size) p2 c0 d0 (p2::pl) (depsum +. d) (nombre + 1)
   in
   let (v1,v2) = get_vertex r (n0+1),
     get_vertex r (n0+1+gl_vertex_size) in
@@ -353,7 +353,7 @@ let feedback_parse_line r n0 nmax =
    pas en compte la différence de couleurs à chaque sommet. Rem3: en
    general opengl sépare tous les polygones en triangles !
 *) (* a faire: fournir la couleur moyenne *)
-let feedback_parse_poly r n0 nmax = 
+let feedback_parse_poly r n0 nmax =
   let rec loop n nfin pl depsum nombre =
     if (n > nfin) || (n >= nmax) then (pl,depsum,nombre,n)
     else let v = get_vertex r n in
@@ -367,18 +367,18 @@ let feedback_parse_poly r n0 nmax =
   let poly_offset = 0.0001 (* !!!!!!!!!! à normaliser ? *) in
     [Color c0 ; Poly pl] , poly_offset +. depsum /. float nombre , n
 
-let feedback_parse_pass r n0 = 
+let feedback_parse_pass r n0 =
   let token = Raw.get_float r ~pos:(n0+1) in
     if token = text_token then raise (Not_implemented "text token")
     else raise (Not_implemented "unknown pass-through")
 
-let depth_compare (_,d1 : plot_object list * float ) (_,d2) = 
+let depth_compare (_,d1 : plot_object list * float ) (_,d2) =
   if d1 > d2 then -1 else if d1 < d2 then 1 else 0
 
 (* renvoie une liste d'objets, directement visualisable avec display
 *)
 let feedback_parse r nmax =
-  let rec loop n pl = 
+  let rec loop n pl =
     if n >= nmax then pl else
       let token =  Raw.get_float r ~pos:n in
       let (pl',dep,n') = (
@@ -388,7 +388,7 @@ let feedback_parse r nmax =
  else if token = gl_polygon_token then feedback_parse_poly r n nmax
  else if token = gl_pass_through_token then feedback_parse_pass r n
  else raise (Not_implemented "unknown token"))
-      in loop n' ((pl',dep) :: pl) 
+      in loop n' ((pl',dep) :: pl)
   in
   let liste = List.sort depth_compare (loop 0 []) in
   (feedback_view ()) :: (List.flatten (List.map (fun (pl,_) -> pl) liste))
@@ -414,14 +414,14 @@ let unit_normal a b c = norm (pvect (c -| b) (a -| b))
 let light_on = ref true
 
 let get_light () = !light_on
-    
+
 let toggle_light () =
   light_on:= not !light_on;
   reset_gllist := true
-      
+
 let switch_light bool = match bool with
   | true -> begin
-      Gl.enable `lighting; 
+      Gl.enable `lighting;
       GlLight.light ~num:0 (`position (1., -1., 1., 0.5));
       GlLight.light ~num:0 (`specular (0., 0., 0., 1.));
       GlLight.light ~num:0 (`diffuse (0.2, 0.2, 0.2, 0.8));
@@ -458,8 +458,8 @@ let enter3d ({ Point3.x=x1; y=y1; _ }, {Point3.x=x2; y=y2; _ })  =
   (*****************)
   let zoom = !zoom3d in
     GlMat.scale ~x:zoom ~y:zoom ~z:zoom (); (* inutile et lent ? *)
-    let rot = GlMat.of_array (Geom.q_matrix !position3d) in 
-      GlMat.mult rot; 
+    let rot = GlMat.of_array (Geom.q_matrix !position3d) in
+      GlMat.mult rot;
       Gl.enable `depth_test
 
 let leave3d () =
@@ -481,14 +481,15 @@ let gety p = p.y
 
 (* applique la fonction f aux coordonnées c de la liste de points pl,
    à l'envers: -- on doit pouvoir faire plus simple *)
-let mymap f pl c = 
+let mymap f pl c =
+  let myget =
+    match c with
+    | X -> getx
+    | Y -> gety in
   match pl with
-    [] -> raise Empty_list
-  |  p :: ppl -> let myget = 
-                   match c with
-                     X -> getx
-                   | Y -> gety in
-    let xlist l = List.rev_map myget l in 
+  | [] -> raise Empty_list
+  |  p :: ppl ->
+    let xlist l = List.rev_map myget l in
     List.fold_left f (myget p) (xlist ppl)
 
 let fmin x y : float = if y < x then y else x
@@ -501,7 +502,7 @@ let ymin pl = mymap fmin pl Y
 let ymax pl = mymap fmax pl Y
 
 
-(* on a trois échelles: 
+(* on a trois échelles:
  * celle, mathématique, de la fonction; on les appelle "point".
  * celle, logique, des procédures de traçage; "draw"
  * celle, physique, des pixels de la fenêtre. "pixel"
@@ -519,11 +520,13 @@ let rescale_list pl v (bx0,by0,bx1,by1) = (* changer le nom *)
       []
     end
   | Some  ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) ->
-    let (xmin,xfactor) = if x1 = x0 then ( (-0.5) , bx1 -. bx0) else ( x0 , ( bx1 -. bx0 ) /. ( x1 -. x0 ) ) in
-    let (ymin,yfactor) = if y1 = y0 then ( (-0.5) , by1 -. by0) else ( y0 , ( by1 -. by0 ) /. ( y1 -. y0 ) ) in
+    let (xmin,xfactor) = if x1 = x0 then ( (-0.5) , bx1 -. bx0)
+      else ( x0 , ( bx1 -. bx0 ) /. ( x1 -. x0 ) ) in
+    let (ymin,yfactor) = if y1 = y0 then ( (-0.5) , by1 -. by0)
+      else ( y0 , ( by1 -. by0 ) /. ( y1 -. y0 ) ) in
     (* on met une largeur de 1 et on centre au cas où la largeur du dessin est
        nulle *)
-    let dr_of_point p =  
+    let dr_of_point p =
       let myi x = bx0 +. ( x -. xmin ) *. xfactor in
       let myj y = by0 +. ( y -. ymin ) *. yfactor in
       ( myi (getx p) , myj (gety p) )
@@ -549,7 +552,7 @@ let rescale_3dlist pl =
 let point_of_draw (dx,dy) (bx0,by0,bx1,by1) = function
     None -> raise View_expected
   | Some  ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) ->
-      ( ( x1 -. x0 ) *. dx /. ( bx1 -. bx0 ) ,  
+      ( ( x1 -. x0 ) *. dx /. ( bx1 -. bx0 ) ,
  ( y1 -. y0 ) *. dy /. ( by1 -. by0 ) )
 
 (* le deuxième arg est un view *)
@@ -562,20 +565,22 @@ let point_of_pixel (dx,dy) = function
 (*   point_of_draw (draw_of_pixel (dx,dy) (bx0,by0,bx1,by1)) v (bx0,by0,bx1,by1);; *)
 
 
-(* détermine la "view" optimale pour un objet. Utilisé seulement en
-   début de tracé, lorsqu'aucune "view" n'a déjà été imposée.
-   Attention probleme lorsque l'objet a une de ses dimensions égales à
-   zéro ! *)
-let rec maxview po = 
+(* détermine la "view" optimale pour un objet. Utilisé seulement en début de
+   tracé, lorsqu'aucune "view" n'a déjà été imposée.  Attention on ajoute
+   parfois +/- 1 lorsque l'objet a une de ses dimensions égales à zéro ! *)
+let rec maxview po =
   match po with
   | Points pl | Poly pl ->
     if pl = [] then None
-    else
-      Some (point(mymap fmin pl X, mymap fmin pl Y), 
-            point(mymap fmax pl X, mymap fmax pl Y))
+    else let x0,y0,x1,y1 =
+           mymap fmin pl X, mymap fmin pl Y,
+           mymap fmax pl X, mymap fmax pl Y in
+      let x1 = if x1 = x0 then x0 +. 1. else x1 in
+      let y1 = if y1 = y0 then y0 +. 1. else y1 in
+      Some (point (x0,y0), point (x1,y1))
   | Lines pll -> maxview (Points (List.flatten pll))
   | View v -> v
-  | Axis { center={x=x0 ; y=y0}; _ } -> Some (point(x0 -. 1., y0 -. 1.), 
+  | Axis { center={x=x0 ; y=y0}; _ } -> Some (point(x0 -. 1., y0 -. 1.),
                                               point(x0 +. 1., y0 +. 1.))
   | Text t -> let (x,y)=(t.pos.x, t.pos.y) in
     Some (point(x -. 1., y -. 1.),
@@ -583,7 +588,7 @@ let rec maxview po =
   | Matrix _ -> None
   | Grid ((_,v3,_),_) -> view2of3 v3
   | Surf3d ((_,_,_,  v3,_),_) -> view2of3 v3
-  | Adapt (_,f) -> maxview (f None) 
+  | Adapt (_,f) -> maxview (f None)
   | User _ -> None  (* Some (point(-.1., -.1.), point(1.,1.)) *) (* mieux que rien ... *)
   | _ -> None
 
@@ -659,11 +664,11 @@ let sdl_get_pixel surface x y =
 (* produit une surface sdl a partir du code LaTeX. Utilise latex,
    dvips et gs... *)
 (* à faire: détecter l'encodage... *)
-let latex_to_sdl message size = 
+let latex_to_sdl message size =
   let current_dir = Sys.getcwd () in
     Sys.chdir !tmp_dir;
     let latex_channel = open_out latex_tmp in
-      output_string latex_channel 
+      output_string latex_channel
  "\\documentclass{article}
 \\usepackage{color}
 \\usepackage[utf8]{inputenc}
@@ -700,7 +705,7 @@ let latex_to_sdl message size =
 
 (* calcule la plus petite puissance de deux supérieure ou égale à n *)
 (* ( les textures opengl doivent avoir des dimensions puissances de deux) *)
-let power_of_two n = 
+let power_of_two n =
   let rec pot  n i = if i >= n then i else pot n (i lsl 1) in
     pot n 1
 
@@ -709,10 +714,10 @@ let power_of_two n =
 (* would be cool to have instead a vectorial drawing of the glyphs... *)
 (* for truetype text. we use alpha_luminance format, twice smaller as
    the rgba format *)
-let text_image message size flag = 
+let text_image message size flag =
   let text = match flag with
       Normal -> (
-        if size <> !current_font_size then 
+        if size <> !current_font_size then
           ( current_font := Sdlttf.open_font !font_path size;
             current_font_size := size );(* avoid opening the same font every time *)
         Sdlttf.render_utf8_blended !current_font message
@@ -726,7 +731,7 @@ let text_image message size flag =
      ça. Je ne sais pas d'ailleurs si cela alloue deux fois la place voulue
      ou non: *)
   let r =  Raw.of_string (String.make (image_width*image_height*2) '\000')
-      ~kind:`ubyte in 
+      ~kind:`ubyte in
   let pixel = GlPix.of_raw r ~format:`luminance_alpha ~width:image_width ~height:image_height in
   (* on copie l'image à la main (je ne sais pas faire autrement). On
      pourrait aussi "Blitter" en faisant attention de préserver la
@@ -734,7 +739,7 @@ let text_image message size flag =
   for i = 0 to w - 1 do
     for j = 0 to h - 1 do
       Raw.sets (GlPix.to_raw pixel) ~pos:(2*((j+1)*image_width+i)) (* j+1: une ligne de rab pour opengl ...? Faut-il augmenter image_height aussi ? *)
-        (let ((a,_,_),d) = sdl_get_pixel text i (h -1 - j) 
+        (let ((a,_,_),d) = sdl_get_pixel text i (h -1 - j)
         (* il faut renverser l'image *) in [|255-a;d|]) (* 255-a pour pngalpha *)
     done
   done;
@@ -746,7 +751,7 @@ let image_of_sdl image =
   let image_width = power_of_two w
   and image_height = power_of_two h in
   let r =  Raw.of_string (String.make (image_width*image_height*4) '\000')
-      ~kind:`ubyte in 
+      ~kind:`ubyte in
   let pixel = GlPix.of_raw r ~format:`rgba ~width:image_width ~height:image_height in
   for i = 0 to w - 1 do
     for j = 0 to h - 1 do
@@ -796,7 +801,7 @@ let sdl_screenshot ?(output = bmp_output) () =
   let s = Sdlvideo.create_RGB_surface [ `SWSURFACE ]
       ~w ~h ~bpp:32 ~rmask:(0xFF0000l) ~gmask:(0x00FF00l)
       ~bmask:(0x0000FFl) ~amask:(0x000000l) in
-  let r = GlPix.to_raw (GlPix.read ~x:0 ~y:0 ~width:w ~height:h 
+  let r = GlPix.to_raw (GlPix.read ~x:0 ~y:0 ~width:w ~height:h
                           ~format:`rgb ~kind:`ubyte) in
   for i = 0 to (w-1) do
     for j = 0 to (h-1) do
@@ -816,26 +821,26 @@ let sdl_screenshot ?(output = bmp_output) () =
 (* tracé des objets *)
 (********************)
 
-let set_line_width ?(dev = !default_device) w = 
+let set_line_width ?(dev = !default_device) w =
   match dev with
     | X11 -> Graphics.set_line_width (int_of_float w)
     | GL -> GlDraw.line_width w
     | FIG -> raise (Not_implemented "fig set_line_width")
 
-let set_point_size ?(dev = !default_device) w = 
+let set_point_size ?(dev = !default_device) w =
   match dev with
     | X11 -> raise (Not_implemented "X11 set_point_size")
     | GL -> GlDraw.point_size w
     | FIG -> raise (Not_implemented "fig set_line_size")
 
-let set_color ?(dev = !default_device) c = 
+let set_color ?(dev = !default_device) c =
   ( match dev with
  X11 ->  let (r,g,b) = int_of_color c in
    Graphics.set_color (Graphics.rgb r g b)
       | GL -> GlDraw.color ( c.r , c.g , c.b )
-      | FIG ->  ( if fig_of_color c = -1 
-   then let r = rgb_of_color c in 
-     Printf.fprintf !xfig_head_channel 
+      | FIG ->  ( if fig_of_color c = -1
+   then let r = rgb_of_color c in
+     Printf.fprintf !xfig_head_channel
        "0 %d #%.6x\n" !fig_color_counter r;
      fig_colors.(!fig_color_counter) <- r;
      incr fig_color_counter ));
@@ -850,12 +855,12 @@ let linear_cmap color1 color2 x =
   {r = f x color1.r color2.r;
    g = f x color1.g color2.g;
    b = f x color1.b color2.b}
-  
+
 (* du noir à la 'color '*)
 let from_black_cmap = linear_cmap black
 
 let from_white_cmap = linear_cmap white
-    
+
 (* de la 'color' au blanc *)
 let to_white_cmap color = linear_cmap color white
 
@@ -869,8 +874,8 @@ let draw_points pl ?(dev = !default_device) ?dep ?(pixel_size=2) view =
   let ps = rescale_list pl view (bounding_box dev) in
   match dev with
   | X11 ->
-    Graphics.plots 
-      (Array.of_list 
+    Graphics.plots
+      (Array.of_list
          (List.rev_map (fun (x,y) -> (int_of_float x, int_of_float y)) ps))
   | GL ->
     GlDraw.begins `points;
@@ -883,10 +888,10 @@ let draw_points pl ?(dev = !default_device) ?dep ?(pixel_size=2) view =
       | None -> Debug.print "draw_points needs a view"; ps in
     let depth = get_depth dep
     and co =  (fig_of_color !current_color) in
-    List.iter (fun (x,y) -> Printf.fprintf !xfig_main_channel 
-                  "2 1 0 %u %d %d %d -1 -1 0.000 0 0 -1 0 0 1\n" 
+    List.iter (fun (x,y) -> Printf.fprintf !xfig_main_channel
+                  "2 1 0 %u %d %d %d -1 -1 0.000 0 0 -1 0 0 1\n"
                   pixel_size co co depth;
-                Printf.fprintf !xfig_main_channel "\t%d %d\n" 
+                Printf.fprintf !xfig_main_channel "\t%d %d\n"
                   (int_of_float x) (int_of_float y))
       ps
 
@@ -895,19 +900,19 @@ let draw_lines pl ~dev ?dep view =
   match dev with
   | X11 ->
     Graphics.draw_poly_line
-      (Array.of_list 
+      (Array.of_list
          (List.rev_map (fun (x,y) -> (int_of_float x, int_of_float y)) ps))
   | GL ->
     GlDraw.begins `line_strip;
     List.iter GlDraw.vertex2 ps;
     GlDraw.ends ()
-  | FIG -> 
+  | FIG ->
     let depth = get_depth dep
     and co = (fig_of_color !current_color) in
-    Printf.fprintf !xfig_main_channel 
-      "2 1 0 %u %d %d %d -1 -1 0.000 0 0 -1 0 0 %d\n" 
+    Printf.fprintf !xfig_main_channel
+      "2 1 0 %u %d %d %d -1 -1 0.000 0 0 -1 0 0 %d\n"
       ((* iscale *) 1) co co depth (List.length ps);
-    List.iter (fun (x,y) ->  Printf.fprintf !xfig_main_channel 
+    List.iter (fun (x,y) ->  Printf.fprintf !xfig_main_channel
                   "\t%d %d\n" (int_of_float x) (int_of_float y)) ps
 
 let draw_lines pl ?(dev = !default_device) ?dep view =
@@ -922,12 +927,12 @@ let draw_lines pl ?(dev = !default_device) ?dep view =
     end
   else draw_lines pl ~dev ?dep view
 
-let draw_poly pl ?(dev = !default_device)  ?border_color ?dep view = 
+let draw_poly pl ?(dev = !default_device)  ?border_color ?dep view =
   let  ps = rescale_list pl view (bounding_box dev) in
   match dev with
   | X11 ->
-    Graphics.fill_poly 
-      (Array.of_list 
+    Graphics.fill_poly
+      (Array.of_list
          (List.rev_map (fun (x,y) -> (int_of_float x, int_of_float y)) ps))
   | GL ->
     GlDraw.begins `polygon;
@@ -938,17 +943,17 @@ let draw_poly pl ?(dev = !default_device)  ?border_color ?dep view =
     GlDraw.begins `line_loop;
     List.iter GlDraw.vertex2 ps;
     GlDraw.ends ()
-  | FIG -> 
+  | FIG ->
     let depth = get_depth dep
     and co =  (fig_of_color !current_color) in
     let bco = (match border_color with
         | None -> co
         | Some bc -> fig_of_color bc) in
-    let pps = List.append ps [ List.hd ps ] in (* on boucle *) 
-    Printf.fprintf !xfig_main_channel 
-      "2 3 0 0 %d %d %d -1 20 0.000 0 0 -1 0 0 %d\n" 
+    let pps = List.append ps [ List.hd ps ] in (* on boucle *)
+    Printf.fprintf !xfig_main_channel
+      "2 3 0 0 %d %d %d -1 20 0.000 0 0 -1 0 0 %d\n"
       bco co depth (List.length pps);
-    List.iter (fun (x,y) ->  Printf.fprintf !xfig_main_channel 
+    List.iter (fun (x,y) ->  Printf.fprintf !xfig_main_channel
                   "\t%d %d\n" (int_of_float x) (int_of_float y)) pps
 
 (* modifier les coords GL *)
@@ -990,7 +995,7 @@ let draw_matrix ?(dev = !default_device) ?(cmap = from_white_cmap)
         for j=0 to (w-1) do
           let c = (float (m.(i).(j) - min_value) /. dc) in
           let x = xmin +. (float j) *. dx
-          and y = ymin +. (float i) *. dy in     
+          and y = ymin +. (float i) *. dy in
           set_color ~dev (cmap c);
           draw_poly ~dev [
             { x = x; y = y };
@@ -1009,7 +1014,7 @@ let move3d m =
         | Rotate _ -> ()
         | Zoom (_, Some z0) -> zoom3d := z0
         | Zoom _ -> ());
-      let t = time () - (int_of_float (1000. *. m.time.min)) in 
+      let t = time () - (int_of_float (1000. *. m.time.min)) in
       m.init_time <- Some t; t
     | Some t -> t in
   if m.time.min < m.time.max then begin
@@ -1028,7 +1033,7 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
     gl plot_func mx my mz (p1,p2)  =
   match dev with
   | X11 -> raise (Not_implemented "X11 draw_surf3d")
-  | GL -> begin 
+  | GL -> begin
       enter3d (p1,p2);
       (* ne peut pas être mis dans la displaylist car contient la rotation qui
          doit s'actualiser *)
@@ -1048,13 +1053,13 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
         let setcolor = if (r*.r +. g*.g +. b*.b) > 1.
           then fun ((_,_,z):float*float*float) ->
             let c = (z -. zmin) /. (zmax -.  zmin) in
-            GlDraw.color (r *. c, g *. c, b *. c) 
+            GlDraw.color (r *. c, g *. c, b *. c)
           else fun ((_,_,z):float*float*float) ->
             let c = (z -. zmin) /. (zmax -.  zmin) in
             GlDraw.color (c +. r -. r *. c, c +. g -. g *. c, c +. b -. b *. c)
         in
         let a i j = mx.(i).(j), my.(i).(j), mz.(i).(j) in
-        let normal_vector i j  = 
+        let normal_vector i j  =
           let (a0,a1,a2,a3,a4) = (a i j), (a i (j-1)), (a (i+1) j), (a i (j+1)), (a (i-1) j) in
           (unit_normal a0 a1 a2) +|
           (unit_normal a0 a2 a3) +|
@@ -1121,7 +1126,7 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire=true)
         Debug.print ("display list created.");
         gl := Some list
     end
-  | FIG -> let draw () = 
+  | FIG -> let draw () =
              draw_surf3d ~dev:GL ~wire:true gl plot_func mx my mz (p1,p2) in
     gl2fig draw plot_func
 
@@ -1145,10 +1150,10 @@ let rec draw_grid gl ?(dev = !default_device) ?(wire=true) plot_func m (p1,p2) =
           and dy = (y2 -. y1) /. float h in
           let setcolor = if (r*.r +. g*.g +. b*.b) > 1.
             then fun z -> let c = (z -. zmin) /. (zmax -.  zmin) in
-              GlDraw.color (r *. c, g *. c, b *. c) 
+              GlDraw.color (r *. c, g *. c, b *. c)
             else fun z -> let c = (z -. zmin) /. (zmax -.  zmin) in
               GlDraw.color (c +. r -. r *. c, c +. g -. g *. c, c +. b -. b *. c)
-          in  
+          in
           (* solid triangles(quads) *)
           for i=0 to (h-1) do
             let y = y1 +. (float i) *. dy in
@@ -1228,7 +1233,7 @@ let rec draw_grid gl ?(dev = !default_device) ?(wire=true) plot_func m (p1,p2) =
           gl := Some list
       end
 
-    | FIG -> let draw () = 
+    | FIG -> let draw () =
                draw_grid ~dev:GL ~wire:true gl plot_func m (p1,p2) in
       gl2fig draw plot_func
   end
@@ -1238,7 +1243,7 @@ let rec draw_grid gl ?(dev = !default_device) ?(wire=true) plot_func m (p1,p2) =
 let rec draw_curve3d ?(dev = !default_device) gl plot_func p3d (p1,p2)  =
   match dev with
   | X11 -> raise (Not_implemented "X11 draw_curve3d")
-  | GL -> begin 
+  | GL -> begin
       enter3d (p1,p2);
       match !gl with
       | Some list when not !reset_gllist -> GlList.call list
@@ -1255,16 +1260,16 @@ let rec draw_curve3d ?(dev = !default_device) gl plot_func p3d (p1,p2)  =
         GlList.ends ();
         gl := Some list
     end
-  | FIG -> let draw () = 
+  | FIG -> let draw () =
              draw_curve3d ~dev:GL gl plot_func p3d (p1,p2) in
     gl2fig draw plot_func
 
 
-let draw_segments pl  ?(dev = !default_device) ?dep view = 
+let draw_segments pl  ?(dev = !default_device) ?dep view =
   let  ps = rescale_list pl view (bounding_box dev) in
   match dev with
     X11 ->  Graphics.draw_segments
-              (Array.of_list 
+              (Array.of_list
                  (let rec pair l = match l with
                        (x0,y0) :: (x1,y1) :: ll ->
                        (int_of_float x0, int_of_float y0,
@@ -1276,9 +1281,9 @@ let draw_segments pl  ?(dev = !default_device) ?dep view =
     GlDraw.ends ()
   | FIG ->  let depth = get_depth dep
     and co =  (fig_of_color !current_color) in (* à modifier *)
-    List.iter 
-      (fun (x0, y0, x1, y1) -> 
-         Printf.fprintf !xfig_main_channel 
+    List.iter
+      (fun (x0, y0, x1, y1) ->
+         Printf.fprintf !xfig_main_channel
            "2 1 0 %u %d %d %d -1 -1 0.000 0 0 -1 0 0 2\n\t%d %d %d %d\n"
            ((* iscale *) 1) co co depth  x0 y0 x1 y1)
       (let rec pair l = match l with
@@ -1288,7 +1293,7 @@ let draw_segments pl  ?(dev = !default_device) ?dep view =
        pair ps)
 
 
-let draw_text ?(dev = !default_device) ?dep view t = 
+let draw_text ?(dev = !default_device) ?dep view t =
   let (x0,y0) = draw_of_point t.pos view (bounding_box dev) in
   match dev with
     X11 -> Graphics.set_text_size (iscale t.size);
@@ -1296,7 +1301,7 @@ let draw_text ?(dev = !default_device) ?dep view t =
     (* en remplacement: *) (* or use an "association list" (size,font) *)
     let size =  max 6 ( min 40 (iscale t.size)  land 62 ) in
     Graphics.set_font (Printf.sprintf "-*-fixed-*-r-*-*-%d-*-*-*-*-*-*-*" size);
-    let (w,h) = Graphics.text_size t.text in 
+    let (w,h) = Graphics.text_size t.text in
     let dx = (match t.align with
           CENTER -> w/2
         | LEFT -> 0
@@ -1314,18 +1319,18 @@ let draw_text ?(dev = !default_device) ?dep view t =
         | LEFT -> 0.
         | RIGHT -> dw) in
     ( GlMisc.pass_through text_token;
-      draw_image image (x0 -. dx) (y0 -. dh /. 2.) 
+      draw_image image (x0 -. dx) (y0 -. dh /. 2.)
         ~mode:(`mode `modulate))
-  | FIG ->  
-    let (_,h) = (315,int_of_float ((match t.flag with 
-          Normal -> 8.1 
+  | FIG ->
+    let (_,h) = (315,int_of_float ((match t.flag with
+          Normal -> 8.1
         | Latex -> 6.) (* à ajuster...*)
-                                   *. float t.size (* |> scale *))) 
+                                   *. float t.size (* |> scale *)))
     (* 315 a modifier, ca pose pb pour fig2dev (pas xfig)
        lorsqu'il n'y a qu'un texte: la bounding box eps est
        calculée en fonction de ça ! *)
     and depth = get_depth dep
-    and co = (fig_of_color !current_color) in 
+    and co = (fig_of_color !current_color) in
     let fig_align = (match t.align with
           CENTER -> 1
         | LEFT -> 0
@@ -1336,14 +1341,19 @@ let draw_text ?(dev = !default_device) ?dep view t =
       (match t.flag with Normal -> 16 | Latex -> 0)
       (float t.size *. 0.75 (* |> scale *)) (* facteur correctif *)
       (match t.flag with Normal -> 4 | Latex -> 2)
-      (int_of_float x0)  ((int_of_float y0) + h/2) 
+      (int_of_float x0)  ((int_of_float y0) + h/2)
       (String.escaped t.text) (* conversion des sequences \.. *)
 
 
 
 (* axes (décorés) passant par le point donné *)
-let sign x = if x > 0. then 1. else if x < 0. then -1. 
-  else raise Division_by_zero 
+let sign x = if x > 0. then 1. else if x < 0. then -1.
+  else raise Division_by_zero
+
+let is_finite x =
+  classify_float x <> FP_infinite && classify_float x <> FP_nan
+
+let is_nan x = not (is_finite x)
 
 (* rem: on autorise les axes en dehors de la figure. Ca peut permettre
    de ne voir qu'un axe sur les deux si on veut. Mais pb pour eps ! *)
@@ -1351,7 +1361,7 @@ let draw_axis a ?(dev = !default_device) view =
   let view_has_changed = !force_refresh || match (a.view) with
       None -> true
     | Some _ -> not ( (a.view = view) &&
-                      (a.window_size = (!window_width, !window_height)) ) in 
+                      (a.window_size = (!window_width, !window_height)) ) in
   let (axis_segments, text_labels)=
     if view_has_changed then
       begin
@@ -1363,75 +1373,80 @@ let draw_axis a ?(dev = !default_device) view =
           match view with
             None -> raise View_expected
           | Some v -> v in
-        (* calcul des unités des axes: (à améliorer) *)
-        let mymodf x = let m = floor x +. 1. in ( x -. m , m) in
-        let myround x = let (r,m) = mymodf x and q = log 2./.log 10. in
-          if (-.r) < q  then m else m -. q 
-        and (minxunit,minyunit) = point_of_pixel (iscale 18, iscale 18) view in
-        let xunit = (sign minxunit) *. 
-                    (10.**(myround (log10 (abs_float minxunit))))
-        (* anciennement 10**(floor (log10 (x1 -. x0)) -. 1.) *)
-        and yunit = (sign minyunit) *. 
-                    (10.**(myround (log10 (abs_float minyunit))))
-        (* taille des "ticks" *)
-        and (vtick,htick) = point_of_pixel (iscale 4, iscale 4) view in
-        let l_axes = [ { x=x0 ; y=ya }; { x=x1 ; y=ya };
-                       { x=xa ; y=y0 }; { x=xa ; y=y1 } ]
-        and l_hticks = let rec ht i = 
-                         let xi = i *. xunit in
-                         if abs_float (xi -. x0) > abs_float (x1 -. x0 -. vtick) then []
-                         else  { x=xi ; y=(ya -. htick) } ::
-                               { x=xi ; y=(ya +. htick) } :: ( ht (i +. 1.) )
-          in ht (floor (x0 /. xunit) +. 1.)
-        and l_vticks = let rec vt i = 
-                         let yi = i *. yunit in
-                         if abs_float (yi -. y0) > abs_float (y1 -. y0 -. htick) then []
-                         else  { x=(xa -. vtick) ; y=yi } ::
-                               { x=(xa +. vtick) ; y=yi } :: ( vt (i +. 1.) )
-          in vt (floor (y0 /. yunit) +. 1.)
-        and ( l_harrow , l_varrow ) = (* flèches aux extrêmités maximales *)
-          let ( xmax , ymax ) = ( (fmax x0 x1) , (fmax y0 y1) )
-          and ( ahtick , avtick ) = ( abs_float htick , abs_float vtick ) in
-          ( [{ x=(xmax -. avtick) ; y=(ya -. ahtick) } ;
-             { x=xmax ; y=ya } ;
-             { x=(xmax -. avtick) ; y=(ya +. ahtick) } ;
-             { x=xmax ; y=ya } ] ,
-            [{ x=(xa -. avtick) ; y=(ymax -. ahtick) } ;
-             { x=xa ; y=ymax } ;
-             { x=(xa +. avtick) ; y=(ymax -. ahtick) } ;
-             { x=xa ; y=ymax } ] ) in
-        (* draw_segments (List.concat [ l_vticks ; l_hticks ; l_axes ; l_harrow ; l_varrow ]) view ~dev; *)
-        (* chiffres *)
-        let xtunit = (sign minxunit) *. 
-                     10.**(myround (log10 (1.7 *. (abs_float minxunit))))
-        and ytunit = (sign minyunit) *. 
-                     10.**(myround (log10 (1.2 *. (abs_float minyunit)))) in
-        let (xpos,xalign) = if x0 < xa -. 4. *. vtick 
-          then xa -. 1.5 *. vtick, RIGHT 
-          else xa +. 1.5 *. vtick, LEFT (* ne marche que si x0<x1 *)
-        and ypos = if y0 < ya -. 3. *. htick then ya -. 2.5 *. htick 
-          else ya +. 2.5 *. htick (* ne marche que si y0<y1 *) in
-        let l_hnum =
-          let rec hn i = 
-            let xi = i *. xtunit in
-            if abs_float (xi -. x0) >= abs_float (x1 -. x0) then []
-            else  { pos = { x=xi ; y=ypos } ;
-                    text = (Printf.sprintf "%g" xi) ; 
-                    size= 10 ; align = CENTER ; flag = Normal ; pix = None } :: ( hn (i +. 1.) ) in
-          hn (floor (x0 /. xtunit) +. 1.) 
-        and l_vnum =
-          let rec vn i = 
-            let yi = i *. ytunit in
-            if abs_float (yi -. y0) >= abs_float (y1 -. y0) then []
-            else  { pos = { x=xpos ; y=yi } ;
-                    text = (Printf.sprintf "%g" yi) ;
-                    size = 10 ; align = xalign ; flag = Normal ; pix = None } :: ( vn (i +. 1.) ) in
-          vn (floor (y0 /. ytunit) +. 1.) in
-        let t =
-          ( (List.concat [ l_vticks ; l_hticks ; l_axes ; l_harrow ; l_varrow ]) ,
-            (* = axis_segments *)
-            (List.concat [ l_hnum ; l_vnum ] ) )  (* = text_labels *) in
-        a.ticks <- (Some t); t
+        if is_nan x0 || is_nan y0 || is_nan x1 || is_nan y1
+        then (Printf.sprintf "ERROR: cannot draw axis with infinite view (%f,%f,%f,%f)" x0 y0 x1 y1 |> print_endline;
+              [],[])
+        else begin
+          (* calcul des unités des axes: (à améliorer) *)
+          let mymodf x = let m = floor x +. 1. in ( x -. m , m) in
+          let myround x = let (r,m) = mymodf x and q = log 2./.log 10. in
+            if (-.r) < q  then m else m -. q
+          and (minxunit,minyunit) = point_of_pixel (iscale 18, iscale 18) view in
+          let xunit = (sign minxunit) *.
+                      (10.**(myround (log10 (abs_float minxunit))))
+          (* anciennement 10**(floor (log10 (x1 -. x0)) -. 1.) *)
+          and yunit = (sign minyunit) *.
+                      (10.**(myround (log10 (abs_float minyunit))))
+          (* taille des "ticks" *)
+          and (vtick,htick) = point_of_pixel (iscale 4, iscale 4) view in
+          let l_axes = [ { x=x0 ; y=ya }; { x=x1 ; y=ya };
+                         { x=xa ; y=y0 }; { x=xa ; y=y1 } ]
+          and l_hticks = let rec ht i =
+                           let xi = i *. xunit in
+                           if abs_float (xi -. x0) > abs_float (x1 -. x0 -. vtick) then []
+                           else  { x=xi ; y=(ya -. htick) } ::
+                                 { x=xi ; y=(ya +. htick) } :: ( ht (i +. 1.) )
+            in ht (floor (x0 /. xunit) +. 1.)
+          and l_vticks = let rec vt i =
+                           let yi = i *. yunit in
+                           if abs_float (yi -. y0) > abs_float (y1 -. y0 -. htick) then []
+                           else  { x=(xa -. vtick) ; y=yi } ::
+                                 { x=(xa +. vtick) ; y=yi } :: ( vt (i +. 1.) )
+            in vt (floor (y0 /. yunit) +. 1.)
+          and ( l_harrow , l_varrow ) = (* flèches aux extrêmités maximales *)
+            let ( xmax , ymax ) = ( (fmax x0 x1) , (fmax y0 y1) )
+            and ( ahtick , avtick ) = ( abs_float htick , abs_float vtick ) in
+            ( [{ x=(xmax -. avtick) ; y=(ya -. ahtick) } ;
+               { x=xmax ; y=ya } ;
+               { x=(xmax -. avtick) ; y=(ya +. ahtick) } ;
+               { x=xmax ; y=ya } ] ,
+              [{ x=(xa -. avtick) ; y=(ymax -. ahtick) } ;
+               { x=xa ; y=ymax } ;
+               { x=(xa +. avtick) ; y=(ymax -. ahtick) } ;
+               { x=xa ; y=ymax } ] ) in
+          (* draw_segments (List.concat [ l_vticks ; l_hticks ; l_axes ; l_harrow ; l_varrow ]) view ~dev; *)
+          (* chiffres *)
+          let xtunit = (sign minxunit) *.
+                       10.**(myround (log10 (1.7 *. (abs_float minxunit))))
+          and ytunit = (sign minyunit) *.
+                       10.**(myround (log10 (1.2 *. (abs_float minyunit)))) in
+          let (xpos,xalign) = if x0 < xa -. 4. *. vtick
+            then xa -. 1.5 *. vtick, RIGHT
+            else xa +. 1.5 *. vtick, LEFT (* ne marche que si x0<x1 *)
+          and ypos = if y0 < ya -. 3. *. htick then ya -. 2.5 *. htick
+            else ya +. 2.5 *. htick (* ne marche que si y0<y1 *) in
+          let l_hnum =
+            let rec hn i =
+              let xi = i *. xtunit in
+              if abs_float (xi -. x0) >= abs_float (x1 -. x0) then []
+              else  { pos = { x=xi ; y=ypos } ;
+                      text = (Printf.sprintf "%g" xi) ;
+                      size= 10 ; align = CENTER ; flag = Normal ; pix = None } :: ( hn (i +. 1.) ) in
+            hn (floor (x0 /. xtunit) +. 1.)
+          and l_vnum =
+            let rec vn i =
+              let yi = i *. ytunit in
+              if abs_float (yi -. y0) >= abs_float (y1 -. y0) then []
+              else  { pos = { x=xpos ; y=yi } ;
+                      text = (Printf.sprintf "%g" yi) ;
+                      size = 10 ; align = xalign ; flag = Normal ; pix = None } :: ( vn (i +. 1.) ) in
+            vn (floor (y0 /. ytunit) +. 1.) in
+          let t =
+            ( (List.concat [ l_vticks ; l_hticks ; l_axes ; l_harrow ; l_varrow ]) ,
+              (* = axis_segments *)
+              (List.concat [ l_hnum ; l_vnum ] ) )  (* = text_labels *) in
+          a.ticks <- (Some t); t
+        end
       end
     else ( match (a.ticks) with
           None -> raise View_expected
@@ -1449,8 +1464,8 @@ let window_flush ?(dev = !default_device) () = match dev with
   | FIG -> raise (Not_implemented "FIG flush")(* flush buffer *)
 
 (* modifie la position 3d. Rotation autour de l'axe y puis axe x *)
-let rotate3d ax ay = 
-  let ry = Geom.q_rotation 0. 1. 0. ay 
+let rotate3d ax ay =
+  let ry = Geom.q_rotation 0. 1. 0. ay
   and rx = Geom.q_rotation 0. 0. 1. ax in
   position3d := Geom.q_mult ry (Geom.q_mult rx !position3d)
 
@@ -1515,12 +1530,12 @@ let sdl_key key =
    | Sdlkey.KEY_DOWN  when (modifier land Sdlkey.kmod_ctrl) <> 0
      -> rotate3d 0.02 0.
    | Sdlkey.KEY_DOWN -> GlMat.rotate ~angle:1. ~x:1. ()
-   | Sdlkey.KEY_EQUALS when 
-       (modifier land Sdlkey.kmod_shift) <> 0 
+   | Sdlkey.KEY_EQUALS when
+       (modifier land Sdlkey.kmod_shift) <> 0
        && (modifier land Sdlkey.kmod_ctrl) <> 0
-     -> mincr zoom3d 
+     -> mincr zoom3d
    | Sdlkey.KEY_EQUALS when (modifier land Sdlkey.kmod_shift) <> 0
-     -> GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 () 
+     -> GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 ()
    | Sdlkey.KEY_PLUS
      -> GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 () (* utiliser plutot la caméra?*)
    | Sdlkey.KEY_EQUALS when (modifier land Sdlkey.kmod_ctrl) <> 0
@@ -1529,7 +1544,7 @@ let sdl_key key =
    | Sdlkey.KEY_TAB when (modifier land Sdlkey.kmod_ctrl) <> 0
      -> position3d := default_position3d;
      zoom3d := default_zoom3d
-   | Sdlkey.KEY_TAB -> GlMat.pop (); GlMat.push (); 
+   | Sdlkey.KEY_TAB -> GlMat.pop (); GlMat.push ();
      reset_time ()
    |Sdlkey.KEY_l when (modifier land Sdlkey.kmod_ctrl) <> 0 ->
      light_on := not !light_on;
@@ -1537,18 +1552,18 @@ let sdl_key key =
      Debug.print "Light = %b" !light_on
      (* GlLight.material ~face:`front (`emission (c.r/.10., c.g/.10., c.b/.10., 1.)) *)
    | Sdlkey.KEY_f -> toggle_fullscreen ()
-   | Sdlkey.KEY_p -> decr pause_pass 
+   | Sdlkey.KEY_p -> decr pause_pass
    (* à améliorer, ex stack *)
    | Sdlkey.KEY_ESCAPE | Sdlkey.KEY_q-> close (); quit := true
-   | Sdlkey.KEY_z when (modifier land Sdlkey.kmod_ctrl) <> 0 -> 
+   | Sdlkey.KEY_z when (modifier land Sdlkey.kmod_ctrl) <> 0 ->
      Debug.print "Suspended"; (* for debug only *)
      quit := true
-   | Sdlkey.KEY_s when (modifier land Sdlkey.kmod_ctrl) <> 0 -> 
+   | Sdlkey.KEY_s when (modifier land Sdlkey.kmod_ctrl) <> 0 ->
      (* Sdlvideo.save_BMP (Sdlvideo.get_video_surface ())
         bmp_output; *)
      (* ne marche pas. voir le fichier sdl-opengl *)
      sdl_screenshot ()
-   | _ when (Sdlkey.get_mod_state ()) = 0 
+   | _ when (Sdlkey.get_mod_state ()) = 0
      (* on reste en pause en cas d'appui sur un
         modificateur (control, shift, etc.) *)
      -> resume_pause := true
@@ -1561,12 +1576,12 @@ let sdl_mouse_close () =
   Sdlevent.disable_events Sdlevent.mousebuttonup_mask
 
 (* on ne veut pas de retard avec la souris *)
-let rec sdl_mouse_update event = 
+let rec sdl_mouse_update event =
   match Sdlevent.poll () with
   | None -> Sdlevent.add [event]
   | Some event -> sdl_mouse_update event
 
-let sdl_mouse_action mouse = 
+let sdl_mouse_action mouse =
   sdl_mouse_update (Sdlevent.MOUSEMOTION mouse);
   let (x, y, but) = Sdlmouse.get_state () in
   match but with
@@ -1576,7 +1591,7 @@ let sdl_mouse_action mouse =
 let sdl_mouse_init mouse =
   (* print_endline "down_button"; *)
   match mouse.Sdlevent.mbe_button with
-  | Sdlmouse.BUTTON_LEFT ->   
+  | Sdlmouse.BUTTON_LEFT ->
     begin
       Sdlevent.enable_events Sdlevent.mousemotion_mask;
       Sdlevent.enable_events Sdlevent.mousebuttonup_mask;
@@ -1596,11 +1611,11 @@ let sdl_mouse_init mouse =
   | _ -> ()
 
 
-let sdl_resize w h = 
+let sdl_resize w h =
   resize_window w h;
-  ignore (Sdlvideo.set_video_mode 
-            ~w:(!window_width + !left_margin + !right_margin) 
-            ~h:(!window_height + !top_margin + !bottom_margin) 
+  ignore (Sdlvideo.set_video_mode
+            ~w:(!window_width + !left_margin + !right_margin)
+            ~h:(!window_height + !top_margin + !bottom_margin)
             [ `DOUBLEBUF ; `OPENGL ; `RESIZABLE]);
   gl_resize ()
 
@@ -1618,33 +1633,33 @@ let sdl_event () =
 
 (* pause sans rafraichissement de la boucle display. t en milisecondes. t=0 pour
    infini. Une touche pour sortir dans tous les cas *)
-let sdl_freeze t = 
+let sdl_freeze t =
   let init_time = time () in
   let myeventopt = ref (Sdlevent.poll ()) in
   Sdlevent.disable_events Sdlevent.active_mask;
   Sdlgl.swap_buffers();
-  while  (!myeventopt = None && ( t=0 || time() - init_time < t)) 
-  do 
+  while  (!myeventopt = None && ( t=0 || time() - init_time < t))
+  do
     myeventopt := Sdlevent.poll ();
     Sdltimer.delay !frame_length;
   done;
   time_delay := !time_delay + time () - init_time;
-  Sdlevent.enable_events Sdlevent.active_mask; 
+  Sdlevent.enable_events Sdlevent.active_mask;
   match !myeventopt with
     None -> ()
-  | Some (Sdlevent.KEYDOWN key as myevent) -> 
-    if key.Sdlevent.keysym = Sdlkey.KEY_ESCAPE 
+  | Some (Sdlevent.KEYDOWN key as myevent) ->
+    if key.Sdlevent.keysym = Sdlkey.KEY_ESCAPE
     ||  key.Sdlevent.keysym = Sdlkey.KEY_q (* ou le faire pour tous ? *)
        (* =l'utilisateur veut sortir *)
-    then Sdlevent.add [ myevent ] 
+    then Sdlevent.add [ myevent ]
   | _ -> ()
 
-let do_freeze ?(dev = !default_device) t = 
+let do_freeze ?(dev = !default_device) t =
   match dev with
   | X11 ->  Graphics.synchronize ();
     if t = 0 then ignore(Graphics.read_key ())
     else ignore (Unix.select [] [] [] (float t /. 1000.))
-  | GL -> (if !counter <= !pause_pass then ()  
+  | GL -> (if !counter <= !pause_pass then ()
            else match !default_gl with
              | SDL -> sdl_freeze t;
                pause_pass := !counter
@@ -1652,21 +1667,21 @@ let do_freeze ?(dev = !default_device) t =
              | GTK -> () (* ??? TODO manage time delay *))
   | FIG -> ();; (* ajouter warning *)
 
-let do_pause ?(dev = !default_device) t = 
+let do_pause ?(dev = !default_device) t =
   match dev with
   | X11 ->  Graphics.synchronize ();
     if t = 0 then ignore(Graphics.read_key ())
     else ignore (Unix.select [] [] [] (float t /. 1000.))
   | GL ->
-    if !counter <= !pause_pass then () 
-    else 
+    if !counter <= !pause_pass then ()
+    else
       begin
         match !pause_time with
         | None -> pause_time := Some (time ()); do_not_draw := true
-        | Some pt -> 
+        | Some pt ->
           match !resume_pause || (t != 0 && (time () - pt >= t)) with
           | false -> do_not_draw := true
-          | true -> (resume_pause :=  false; 
+          | true -> (resume_pause :=  false;
                      do_not_draw := false;
                      pause_pass := !counter;
                      pause_time := None)
@@ -1705,7 +1720,7 @@ let rec object_plot ?(addcounter = true) ~dev po view  =
   | Curve3d ((p3d,v3),gl) -> let v3 = initialize_view3 v3 in
     draw_curve3d gl (object_plot ~addcounter:false) p3d v3 ~dev
   | Move3d m -> move3d m
-  | Adapt (vo,f) -> let obj = 
+  | Adapt (vo,f) -> let obj =
                       (match (!vo,view) with
                        | ((Some w, Some o), Some v) when w = v -> o
                        | _ -> let o = f view in vo := (view, Some o); o) in
@@ -1722,7 +1737,7 @@ let rec object_plot ?(addcounter = true) ~dev po view  =
 (* use t as a realtime parameter, in seconds *)
 let anim_plot f ?pas ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
   let userfu v dev =
-    let t = if t1 = 0. 
+    let t = if t1 = 0.
       then (t0 +. float (time () - !initial_time) /. 1000. )
       else fmin t1 (t0 +. float (time () - !initial_time) /. 1000.) in
     let p = plot (f t) ?pas x0 x1 in
@@ -1731,9 +1746,9 @@ let anim_plot f ?pas ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
 
 
 (* ne marche pas bien... refaire les pause *)
-let gl_zoom_out t pop = 
+let gl_zoom_out t pop =
   let first_time = ref None in
-  let foo _ _ = 
+  let foo _ _ =
     match !first_time with
       None -> first_time := Some (time()); Debug.print "Initialisation"
     | Some t0 when (time() < t0 + t) -> GlMat.scale ~x:0.91 ~y:0.91 (); do_pause 0
@@ -1743,13 +1758,13 @@ let gl_zoom_out t pop =
       if pop then (GlMat.pop (); GlMat.push ())
   in foo
 
-let gl_zoom_in t pop = 
+let gl_zoom_in t pop =
   let first_time = ref None in
-  let foo _ _ = 
+  let foo _ _ =
     match !first_time with
       None -> first_time := Some (time()); Debug.print "Initialisation"
     | Some t0 when (time() < t0 + t) -> GlMat.scale ~x:1.1 ~y:1.1 (); do_pause 0
-    | _ -> 
+    | _ ->
       first_time := None;
       resume_pause := true;
       if pop then (GlMat.pop (); GlMat.push ())
@@ -1769,21 +1784,21 @@ let rec draw ~dev sh view =
     ( match view with
         Some _ -> (match sh with
             Sheet [] -> ()
-          | Sheet (po::ssh) -> 
+          | Sheet (po::ssh) ->
             ( match po with
               | View vv -> draw (Sheet ssh) vv ~dev
               | Sheet sssh -> draw (Sheet sssh) None ~dev;
                 (* (on réinitialise la vue) *)
-                draw (Sheet ssh) view ~dev 
+                draw (Sheet ssh) view ~dev
               | _ -> draw po view ~dev;
                 draw (Sheet ssh) view ~dev )
           | po -> object_plot po view ~dev )
       | None -> (match sh with
             Sheet [] -> ();
-          | Sheet (po :: ssh) -> let v = maxview po in 
+          | Sheet (po :: ssh) -> let v = maxview po in
             draw po v ~dev;
             draw (Sheet ssh) v ~dev
-          | po -> let v = maxview po in 
+          | po -> let v = maxview po in
             object_plot po v ~dev)
     )
 (* (oui je sais c'est un peu trop compliqué) *)
@@ -1794,7 +1809,7 @@ let draw ?(dev = !default_device) sh view =
   reset_gllist := false
 
 let force_refresh () = force_refresh := true
-    
+
 (*********** interfaces graphiques *************)
 
 let graphics_resize () =
@@ -1813,7 +1828,7 @@ let graphics_key key =
     '\027' -> Graphics.close_graph (); true
   | _ -> false
 
-let graphics_event () = 
+let graphics_event () =
   let status = Graphics.wait_next_event [Graphics.Key_pressed ; Graphics.Button_down] in
   if status.Graphics.keypressed then graphics_key status.Graphics.key
   else if status.Graphics.button then (graphics_resize (); false)
@@ -1856,9 +1871,9 @@ let rec sdl_mainloop sh wait =
   draw sh None ~dev:GL;
   Sdlgl.swap_buffers ();
   let elapsed_time =  time () - !start_time in
-  if elapsed_time < !frame_length 
+  if elapsed_time < !frame_length
   then Sdltimer.delay (!frame_length - elapsed_time) else Sdltimer.delay 10; (* on laisse respirer le CPU... *)
-  if wait && (!pause_pass = 0 || (!do_not_draw && !pause_pass != 0)) 
+  if wait && (!pause_pass = 0 || (!do_not_draw && !pause_pass != 0))
   then Sdlevent.wait (); (* on bloque s'il n'y a pas eu de pauses, ou si les pauses ne sont pas finies *)
   if !do_not_draw then do_not_draw := false else pause_pass := 0; (* ca repart au debut *)
   if ( sdl_event () || !interrupt_request ) then () else sdl_mainloop sh wait
@@ -1887,7 +1902,7 @@ let xfig_init () =
   output_string !xfig_head_channel "Portrait\nCenter\nMetric\nA4\n100.00\nSingle\n-2\n1200 2\n"
 
 (* couleurs xfig 32-543 *)
-let write_fig_color c num = let r = rgb_of_color c in 
+let write_fig_color c num = let r = rgb_of_color c in
   ( Printf.fprintf !xfig_main_channel "# User color :\n0 %d #%x\n" num r;
     fig_colors.(num) <- r; print_int r )
 
@@ -1897,10 +1912,10 @@ let write_fig_color c num = let r = rgb_of_color c in
 let rec fig_first_pass sh num = if sh = (Sheet []) then () else
   if num > 543 then raise Fig_Too_Many_Colors
   else let (next_sh , next_num) = match sh with
-      | Sheet (Color c :: ssh) when fig_of_color c = -1 
+      | Sheet (Color c :: ssh) when fig_of_color c = -1
         -> (write_fig_color c num; (ssh , num + 1))
       | Sheet (_ :: ssh) -> (ssh , num)
-      | Color c when fig_of_color c = -1 
+      | Color c when fig_of_color c = -1
         -> (write_fig_color c num; ([], num + 1))
       | _ -> ([] , num) in
     fig_first_pass (Sheet next_sh) next_num
@@ -1913,7 +1928,7 @@ let xfig_mainloop sh =
   draw sh None ~dev:FIG;
   close_out !xfig_main_channel;
   close_out !xfig_head_channel;
-  shell "cat %s.head %s.main > %s" 
+  shell "cat %s.head %s.main > %s"
     (* a modifier pour portabilité *)
     xfig_output_file xfig_output_file xfig_output_file;
   shell "rm %s.head %s.main" xfig_output_file xfig_output_file
@@ -1951,7 +1966,7 @@ let write_eps ?output ?(pdf=true) sh =
 
 (* ne traite pas les pauses pour le moment... à intégrer à mainloop ?
 *)
-let write_bmp ?(output = bmp_output) sh = 
+let write_bmp ?(output = bmp_output) sh =
   gl_init ~show:false ();
   GlClear.clear [ `color ];
   GlDraw.color (float_of_color default_color);
@@ -1985,16 +2000,16 @@ let disp ?(dev = !default_device) ?(fscreen = false) sh  =
     pause_pass := 0;
     interrupt_request := false;
     ( match !default_gl with
-        GLUT -> 
+        GLUT ->
         if fscreen then Iglut.fullscreen ();
         Iglut.mainloop sh
-      | SDL -> 
+      | SDL ->
         if fscreen <> !fullscreen then toggle_fullscreen ();
         reset_time ();
         GlClear.clear [ `color ; `depth ];
         Sdlgl.swap_buffers ();
-        sdl_mainloop sh wait 
-      | GTK -> (* ne pas utiliser comme ca...*) 
+        sdl_mainloop sh wait
+      | GTK -> (* ne pas utiliser comme ca...*)
         reset_time ();
         (* let wait  = not (has_anim sh) in *)
         ignore(gtk_mainloop sh))
@@ -2008,8 +2023,8 @@ let set_gl_scale s = gl_scale := s
 let ( & ) a b = List.append a b
 
 (* interactif: wrapper/raccourci pour tracer une liste d'objets *)
-let display ?(dev = !default_user_device) ?(fscreen = false) 
-    ?output sh = 
+let display ?(dev = !default_user_device) ?(fscreen = false)
+    ?output sh =
   match dev with
     X11_d -> disp (Sheet sh) ~dev:X11
   | GL_d ->  disp (Sheet sh) ~dev:GL ~fscreen
@@ -2039,7 +2054,7 @@ let display ?(dev = !default_user_device) ?(fscreen = false)
     )
 
 (* inutilisé *)
-let display_eps sh = 
+let display_eps sh =
   disp (Sheet sh) ~dev:FIG;
   write_eps (Sheet sh);
   shell "gv --watch --scalebase=2 %s&" eps_output_file
@@ -2050,18 +2065,18 @@ let interrupt () = interrupt_request := true;
   (* On simule une touche inoffensive (a) pour passer le Sdlevent.wait ().
      evidemment seulement pour sdl *)
   if !window_open then begin
-    Sdlevent.add 
+    Sdlevent.add
       [ (Sdlevent.KEYDOWN
            {Sdlevent.ke_which = 0; Sdlevent.ke_state = Sdlevent.PRESSED;
             Sdlevent.keysym = Sdlkey.KEY_a; Sdlevent.keymod = 0;
             Sdlevent.keycode = '\000'; Sdlevent.unicode = 0}) ]
   end
 
-let interruption int = 
+let interruption int =
   prerr_endline (Printf.sprintf "\nInterruption:%d\n" int); flush stderr;
   (* for debug only *)
   if !window_open then begin
-    Sdlevent.add 
+    Sdlevent.add
       (* [ (Sdlevent.KEYDOWN
          {Sdlevent.ke_which = 0; Sdlevent.ke_state = Sdlevent.PRESSED;
          Sdlevent.keysym = Sdlkey.KEY_ESCAPE; Sdlevent.keymod = 0;
@@ -2071,9 +2086,9 @@ let interruption int =
             Sdlevent.keysym = Sdlkey.KEY_z; Sdlevent.keymod = 64;
             Sdlevent.keycode = '\000'; Sdlevent.unicode = 0}) ]
   end
-  else prerr_endline "Nothing"; 
+  else prerr_endline "Nothing";
   flush stderr; (* for debug only *)
-  if int = Sys.sigint then 
+  if int = Sys.sigint then
     (remove_tmp_dir (); exit 0)
 
 let () =
@@ -2082,7 +2097,7 @@ let () =
 
 (************************************************************************)
 
-(* 
+(*
    Local Variables:
    compile-command:"cd ..;dune build"
    End:
