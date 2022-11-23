@@ -1,6 +1,8 @@
 (* Matrix example *)
-
 #use "topfind";;
+
+#thread;;
+
 #require "oplot";;
 
 open Oplot.Plt;;
@@ -11,6 +13,7 @@ for i = 0 to 19 do
   for j = 0 to 29 do
     m.(i).(j) <- Random.int 255
   done
-done;;
+done
+;;
 
-display [Color blue ; Matrix m];;
+display [ Color blue; Matrix m ];;

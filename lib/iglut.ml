@@ -6,7 +6,6 @@
 exception Not_compiled of string
 
 let noway () = raise (Not_compiled "GLUT interface")
-
 let fullscreen () = noway ()
 (* let fullscreen () = Glut.fullScreen ()  *)
 
@@ -46,9 +45,6 @@ let init () = noway ()
 (* 			  | Glut.KEY_DOWN -> GlMat.rotate ~angle:(-1.) ~x:1. () *)
 (* 			  | _ ->  resume_pause := true );; *)
 
-
-
-
 (* boucle principale interactive GLUT  pour afficher la feuille sh *)
 
 let mainloop _sh = noway ()
@@ -72,4 +68,3 @@ let mainloop _sh = noway ()
 (*     Glut.reshapeFunc ~cb:gl_reshape; *)
 (*     Glut.displayFunc ~cb:gl_display; *)
 (*     Glut.mainLoop ();; *)
-

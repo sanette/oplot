@@ -1,8 +1,4 @@
-(install 
+(install
  (section share)
  (package oplot)
- (files  
-  "DejaVuSans.ttf"
-  "fig2eps"
-  "header.tex"
-))
+ (files "DejaVuSans.ttf" "fig2eps" "header.tex"))

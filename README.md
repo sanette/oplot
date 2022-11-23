@@ -36,4 +36,4 @@ An official standalone GUI for `oplot`:
 ## Examples
 
 The `top` directory contains examples that can be run from the ocaml
-toplevel.
+toplevel. See the [README](top/README.md) file.

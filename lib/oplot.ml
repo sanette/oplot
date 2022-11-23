@@ -3,7 +3,7 @@ Debug.print "* Loading oplot"
 (* Simple mathematical plotter library for `ocaml` with fast graphics (opengl),
    LaTeX display, and high quality vector output (xfig, postscript or PDF)
 
-    copyright (c) 2006-2020 VU NGOC San *)
+    copyright (c) 2006-2022 VU NGOC San *)
 
 (* This program was initially developped by the author at the University of
    Grenoble. *)
@@ -16,7 +16,6 @@ Debug.print "* Loading oplot"
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    General Public License for more details. *)
-
 
 module Points = Points
 
@@ -35,11 +34,10 @@ module Internal = struct
   include Oplotdef
   include Renderinit
   include Sysinit
-  end
+end
 
-(* 
+(*
    Local Variables:
    compile-command:"cd ..;dune build"
    End:
 *)
-
