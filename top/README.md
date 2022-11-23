@@ -17,7 +17,7 @@ system has the `libgsl` package and add the `ocaml` bindings with
 
 ![logistique](logistique.png)
 
-![magnetique](magnetique.png)
+![magnetic](magnetic.png)
 
 ![matrix](matrix.png)
 
