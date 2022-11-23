@@ -666,19 +666,22 @@ td.def-doc *:first-child {
 /* Mobile adjustements. */
 
 @media only screen and (max-width: 95ex) {
-  .odoc-content {
-    margin: auto;
-    padding: 2em;
-  }
-  .odoc-toc {
-    position: static;
-    width: auto;
-    min-width: unset;
-    max-width: unset;
-    border: none;
-    padding: 0.2em 1em;
-    border-radius: 5px;
-  }
+    body {
+	margin-left: 4ex;
+    }
+    .odoc-content {
+	margin: auto;
+	padding: 2em;
+    }
+    .odoc-toc {
+	position: static;
+	width: auto;
+	min-width: unset;
+	max-width: unset;
+	border: none;
+	padding: 0.2em 1em;
+	border-radius: 5px;
+    }
 }
 
 /* Print adjustements. */
