@@ -13,9 +13,9 @@
     [Oplot] can be used in the toplevel. First load the library with
 
     {[
-      #use "topfind"
-
-      #require "oplot"
+      #use "topfind";;
+      #thread;;
+      #require "oplot";;
     ]}
 
     You may open the {!Oplot.Plt} module for easy access to all plot functions.
