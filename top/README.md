@@ -1,5 +1,7 @@
 # Running the examples
 
+(This requires `tsdl-ttf` version >= 0.4.)
+
 Once the `oplot` library is installed, examples can be run in an ocaml
 toplevel (for instance `utop`), or directly like this:
 
