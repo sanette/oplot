@@ -1,11 +1,10 @@
 (* Matrix example *)
+
 #use "topfind";;
-
 #thread;;
-
 #require "oplot";;
 
-open Oplot.Plt;;
+open Oplot.Plt
 
 let m = Array.make_matrix 20 30 0;;
 

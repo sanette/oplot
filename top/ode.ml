@@ -223,11 +223,10 @@ let anim_ode ?time_pos ?(show_head = false) ?(speed = 1.) f y0 t0 t1 =
         let tt = text (Printf.sprintf "t=%.2f" t) x y in
         object_plot tt (Some v) ~dev
     | None -> ());
-    if show_head then begin
+    if show_head then
       let p = List.hd sol2d in
       let hd = text "o" p.x p.y in
       object_plot hd (Some v) ~dev
-    end
   in
   User userfu
 

@@ -12,6 +12,7 @@ do
 done
 
 chmod 644 docs/odoc.css
+cp odoc-fix.css docs/odoc.css
 echo "img.oplot {max-height: 10em;} " >>  docs/odoc.css
 cp top/example.png docs/oplot/Oplot/
 cp share/example2.png docs/oplot/Oplot/

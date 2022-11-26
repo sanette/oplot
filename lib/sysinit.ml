@@ -11,33 +11,31 @@ let concat = Filename.concat
 (* installation *)
 let oplot_dir =
   try Sys.getenv "OPLOTDIR" with
-  | Not_found ->
+  | Not_found -> (
       let exe = (* Whereami.exe ()*) Sys.executable_name in
-      begin
-        let basename, dirname = (Filename.basename, Filename.dirname) in
-        Debug.print "Executable: %s" (basename exe);
-        Debug.print "Directory: %s" (basename (dirname exe));
-        match (basename exe, basename (dirname exe)) with
-        | "goplot", "bin" (* = cas où la librairie est utilisée par goplot *) ->
-            Filename.concat (dirname (dirname exe)) "share/goplot"
-        | "goplot.exe", "gui"
-        (* = lancement par dune exec gui/goplot.exe *)
-        (* | "utop.exe", ".utop"       (\* = lancement par dune utop *\)
-         *   -> Filename.concat (dirname (dirname exe)) "share" *)
-        | _ -> (
-            try
-              let system = Unix.open_process_in "opam var prefix" in
-              let res = input_line system in
-              match Unix.close_process_in system with
-              | Unix.WEXITED 0 -> Filename.concat res "share/oplot"
-              | _ ->
-                  failwith
-                    "Please tell me where the oplot directory is, by setting \
-                     the environment variable OPLOTDIR."
-            with _ ->
-              Debug.print "No oplot installation found. Using current dir.";
-              Filename.current_dir_name)
-      end
+      let basename, dirname = (Filename.basename, Filename.dirname) in
+      Debug.print "Executable: %s" (basename exe);
+      Debug.print "Directory: %s" (basename (dirname exe));
+      match (basename exe, basename (dirname exe)) with
+      | "goplot", "bin" (* = cas où la librairie est utilisée par goplot *) ->
+          Filename.concat (dirname (dirname exe)) "share/goplot"
+      | "goplot.exe", "gui"
+      (* = lancement par dune exec gui/goplot.exe *)
+      (* | "utop.exe", ".utop"       (\* = lancement par dune utop *\)
+       *   -> Filename.concat (dirname (dirname exe)) "share" *)
+      | _ -> (
+          try
+            let system = Unix.open_process_in "opam var prefix" in
+            let res = input_line system in
+            match Unix.close_process_in system with
+            | Unix.WEXITED 0 -> Filename.concat res "share/oplot"
+            | _ ->
+                failwith
+                  "Please tell me where the oplot directory is, by setting the \
+                   environment variable OPLOTDIR."
+          with _ ->
+            Debug.print "No oplot installation found. Using current dir.";
+            Filename.current_dir_name))
   | e -> raise e
 
 (* let oplot_dir = ref oplot_dir

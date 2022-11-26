@@ -13,9 +13,11 @@
     [Oplot] can be used in the toplevel. First load the library with
 
     {[
-      #use "topfind";;
-      #thread;;
-      #require "oplot";;
+      #use "topfind"
+
+      #thread
+
+      #require "oplot"
     ]}
 
     You may open the {!Oplot.Plt} module for easy access to all plot functions.
@@ -305,34 +307,35 @@ module Plt : sig
   (** {3 Available devices} *)
 
   val x11 : user_device
-  (** Software rendering in a separate window *)
+  (** Software rendering in a separate window. *)
 
   val gl : user_device
-  (** Hardware (opengl) rendering in a separate window. This is the default *)
+  (** Hardware (opengl) rendering in a separate window. This is the default. A
+      few keys are active while the window is open. Press [h] for help. *)
 
   val fig : user_device
-  (** Render to an xfig file *)
+  (** Render to an xfig file. *)
 
   val xfig : user_device
-  (** Open in the [xfig] program, if present *)
+  (** Open in the [xfig] program, if present. *)
 
   val eps : user_device
-  (** Render to an EPS (encapsulated postscript) file *)
+  (** Render to an EPS (encapsulated postscript) file. *)
 
   val pdf : user_device
-  (** Render to a PDF (portable document format) file *)
+  (** Render to a PDF (portable document format) file. *)
 
   val gv : user_device
-  (** Render to EPS and open with a postscript viewer like [gv] *)
+  (** Render to EPS and open with a postscript viewer like [gv]. *)
 
   val bmp : user_device
   (** Render to a BMP image. Deprecated. It will actually render a PNG image. *)
 
   val png : user_device
-  (** Render to a PNG image *)
+  (** Render to a PNG image. *)
 
   val img : user_device
-  (** Open in an image viewer *)
+  (** Open in an image viewer. *)
 
   (** {3 Rendering parameters} *)
 
@@ -347,7 +350,7 @@ module Plt : sig
   val set_gl_scale : float -> unit
 
   val quit : ?dev:plot_device -> unit -> unit
-  (** Close the current rendering window and clear the temporary directory *)
+  (** Close the current rendering window and clear the temporary directory. *)
 
   val get_tmp_dir : unit -> string
 
@@ -370,7 +373,7 @@ module Plt : sig
       {!Pause} mechanism. *)
 
   val elapsed : unit -> int
-  (** Time elapsed from the openning of the opengl window *)
+  (** Time elapsed from the openning of the opengl window. *)
 
   val user_flush : plot_device -> unit
   (** Synchronize graphics output by swapping back and front buffers. Hence two
@@ -392,89 +395,6 @@ end
 
 module Internal : sig
   open Plt
-  (* type plot_device = Plt.plot_device
-   *
-   * open Points
-   *
-   * type view = point * point
-   * type view3 = point3 * point3
-   * type points = point list
-   * type axis
-   * type image
-   * type latex
-   * type text
-   * type imatrix = int array array
-   * type fmatrix = float array array
-   * type grid = fmatrix * view3 * bool
-   * type surf3d = fmatrix * fmatrix * fmatrix * view3 * bool
-   * type curve3d = (point3 list) * view3
-   * type move3d
-   *
-   * type gllist
-   *
-   * type color =  { r:float ; g:float ; b:float }
-   * val black : color
-   * val white : color
-   * val red : color
-   * val green : color
-   * val blue : color
-   * val yellow : color
-   * val cyan : color
-   * val magenta : color
-   *
-   * type align = CENTER | LEFT | RIGHT
-   * type text_flag = Normal | Latex
-   *
-   * type plot_object =
-   * | Points of points
-   * | Lines of points list
-   * | Poly of points
-   * | View of view option
-   * | Axis of axis
-   * | Color of color
-   * | Text of text
-   * | Matrix of imatrix * (view option)
-   * | Grid of grid * gllist
-   * | Surf3d of surf3d * gllist
-   * | Curve3d of curve3d * gllist
-   * | Move3d of move3d
-   * | Pause of int
-   * | Freeze of int
-   * | Clear of color
-   * | Adapt of ((view option) * (plot_object option)) ref * (view option -> plot_object)
-   * | User of (view -> plot_device -> unit)
-   * | Sheet of plot_object list
-   *
-   * val axis : float -> float -> plot_object
-   * val parametric_plot :
-   *   (float -> float) -> (float -> float) ->
-   *   ?pas:float -> ?adapt:bool -> float -> float -> plot_object
-   * val point_plot_f :
-   *   (float -> float) -> ?pas:float -> float -> float -> plot_object
-   * val line_plot_f :
-   *   (float -> float) -> ?pas:float -> float -> float -> plot_object
-   * val plot :
-   *   (float -> float) -> ?pas:float -> float -> float -> plot_object
-   * val adapt_plot :
-   *   (float -> float) -> ?pas:float -> float -> float -> plot_object
-   * val text :
-   *   string -> ?size:int -> ?align:align -> float -> float -> plot_object
-   * val latex:
-   *   string -> ?size:int -> ?align:align -> float -> float -> plot_object
-   * val surf3d_plot : (float -> float -> float) ->
-   *   (float -> float -> float) ->
-   *   (float -> float -> float) ->
-   *   ?width:int ->
-   *   ?height:int -> ?wire:bool -> float -> float -> float -> float -> plot_object
-   *
-   * val grid_plot : (float -> float -> float) ->
-   *   ?wire:bool ->
-   *   ?width:int -> ?height:int -> float -> float -> float -> float -> plot_object
-   * val view: float -> float -> float -> float -> plot_object
-   * val color: float -> float -> float -> plot_object
-   * val freeze : int -> plot_object
-   * val pause : int -> plot_object
-   * val rotate : float -> float -> float -> float -> float -> plot_object *)
 
   (** {2 Plot objects} *)
 
@@ -487,20 +407,6 @@ module Internal : sig
   val has_anim : plot_object -> bool
   val gllist_empty : unit -> gllist
   val get_view : view ref -> plot_object
-
-  (* type user_device
-   * val x11 : user_device
-   * val gl : user_device
-   * val fig : user_device
-   * val xfig : user_device
-   * val eps : user_device
-   * val pdf : user_device
-   * val gv : user_device
-   * val bmp : user_device
-   * val png : user_device
-   * val img : user_device
-   *
-   * type gl_handler = SDL | GLUT | GTK *)
 
   (** {2 Opengl rendering and interface} *)
 

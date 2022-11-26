@@ -2,7 +2,7 @@
 (name oplot)
 (version "0.60")
 (generate_opam_files true)
-(license GPL2)
+(license ISC)
 (maintainers "Vu Ngoc San <san.vu-ngoc@laposte.net>")
 (authors "Vu Ngoc San <san.vu-ngoc@laposte.net>")
 (source (github sanette/oplot))

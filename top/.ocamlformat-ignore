@@ -5,5 +5,5 @@ gamma.ml
 gsl.ml
 logistique.ml
 magnetic.ml
-matric.ml
+matrix.ml
 surf3d.ml

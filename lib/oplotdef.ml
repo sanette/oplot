@@ -285,13 +285,11 @@ let lines_crop lines v =
         match (inside p v, acc) with
         | true, [] (* on rentre *) ->
             let new_acc =
-              begin
-                match prev with
-                | None -> [ p ]
-                | Some p' ->
-                    let p'' = try intersect p p' v with _ -> p' in
-                    [ p; p'' ]
-              end
+              match prev with
+              | None -> [ p ]
+              | Some p' ->
+                  let p'' = try intersect p p' v with _ -> p' in
+                  [ p; p'' ]
             in
             loop rest (Some p) new_acc lacc
         | false, [] (* on reste dehors *) -> loop rest (Some p) [] lacc

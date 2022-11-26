@@ -74,10 +74,8 @@ let win = ref None
 let glcontext = ref None
 
 let sdl_init ~show () =
-  if Sdl.Init.test (Sdl.was_init None) Sdl.Init.video then begin
-    Debug.print "Using existing SDL context."
-    (* Sdl.quit () *)
-  end
+  if Sdl.Init.test (Sdl.was_init None) Sdl.Init.video then
+    Debug.print "Using existing SDL context." (* Sdl.quit () *)
   else begin
     Debug.print "Raising up SDL...";
     let crucial () =
@@ -151,13 +149,13 @@ let gl_init ?(show = true) () =
   Debug.print "GL inits...";
   GlClear.color (float_of_color !default_bg_color);
   GlClear.clear [ `depth ];
+
   (*  if !multisampling then Gl.enable `multisample else *)
-  begin
-    (* Gl.enable `line_smooth;*)
-    Gl.disable `polygon_smooth;
-    (* sinon on voit les triangulations *)
-    GlMisc.hint `line_smooth `fastest
-  end;
+
+  (* Gl.enable `line_smooth;*)
+  Gl.disable `polygon_smooth;
+  (* sinon on voit les triangulations *)
+  GlMisc.hint `line_smooth `fastest;
   Gl.enable `blend;
 
   (* Gl.enable `point_smooth; *)
@@ -184,7 +182,7 @@ let toggle_fullscreen () =
   do_option !win (fun w ->
       match
         Sdl.set_window_fullscreen w
-          (if !fullscreen then Sdl.Window.fullscreen_desktop
+          (if not !fullscreen then Sdl.Window.fullscreen_desktop
           else Sdl.Window.windowed)
       with
       | Error (`Msg e) -> Sdl.log "Fullscreen error: %s" e
@@ -447,7 +445,7 @@ let toggle_light () =
 
 let switch_light bool =
   match bool with
-  | true -> begin
+  | true ->
       Gl.enable `lighting;
       GlLight.light ~num:0 (`position (1., -1., 1., 0.5));
       GlLight.light ~num:0 (`specular (0., 0., 0., 1.));
@@ -461,11 +459,9 @@ let switch_light bool =
       Gl.enable `color_material;
       GlLight.color_material ~face:`both `specular;
       GlLight.color_material ~face:`both `ambient_and_diffuse
-    end
-  | false -> begin
+  | false ->
       Gl.disable `lighting;
       Gl.disable `color_material
-    end
 
 (**********  pour entrer dans le mode oplot 3D ************)
 let enter3d ({ Point3.x = x1; y = y1; _ }, { Point3.x = x2; y = y2; _ }) =
@@ -690,7 +686,6 @@ let sdl_get_pixel surface x y =
   let format_enum = Sdl.get_surface_format_enum surface in
   if format_enum <> Sdl.Pixel.format_argb8888 then begin
     Sdl.log "sdl_get_pixel: surface has wrong format";
-    Debug.print "AAAA";
     exit 1
   end;
   go (Sdl.lock_surface surface);
@@ -870,7 +865,7 @@ let draw_image ?(mode = `mode `modulate) image x0 y0 =
 
 let sdl_screenshot ?(output = png_output) () =
   Gl.finish ();
-  let t0 = time () in
+  (* let t0 = time () in *)
   let w = !window_width + !left_margin + !right_margin in
   let h = !window_height + !top_margin + !bottom_margin in
   let s =
@@ -885,14 +880,21 @@ let sdl_screenshot ?(output = png_output) () =
   in
   Sdl.lock_surface s |> go;
   let pix = Sdl.get_surface_pixels s Bigarray.int8_unsigned in
-  Debug.print "Bigarray dim=%i, w*h=%i, Raw=%i" (Bigarray.Array1.dim pix)
-    (w * h) (Raw.byte_size r);
+  (* Debug.print "Bigarray dim=%i, w*h=%i, Raw=%i" (Bigarray.Array1.dim pix) *)
+  (*   (w * h) (Raw.byte_size r); *)
   assert (Bigarray.Array1.dim pix = w * h * 3);
-  for i = 0 to (w * h * 3) - 1 do
-    Bigarray.Array1.unsafe_set pix i (Raw.get r ~pos:i)
+  let pitch = Sdl.get_surface_pitch s in
+  (* For some reason, the image is upside-down, so we have to flip it while
+     copying: *)
+  for j = 0 to h - 1 do
+    let i_pix = (h - j - 1) * pitch in
+    let i_r = j * w * 3 in
+    for i = 0 to (w * 3) - 1 do
+      Bigarray.Array1.unsafe_set pix (i_pix + i) (Raw.get r ~pos:(i_r + i))
+    done
   done;
   Sdl.unlock_surface s;
-  Debug.print "Screenshot surface created in %u ms" (time () - t0);
+  (* Debug.print "Screenshot surface created in %u ms" (time () - t0); *)
   match Tsdl_image.Image.save_png s output with
   | 0 -> print_endline (Printf.sprintf "Screenshot saved to [%s]." output)
   | i -> Sdl.log "Error %i when saving screenshot to: %s" i output
@@ -1006,16 +1008,14 @@ let draw_lines pl ~dev ?dep view =
         ps
 
 let draw_lines pl ?(dev = !default_device) ?dep view =
-  if dev = FIG then
+  if dev = FIG then (
     (* latex n'aime pas les dimensions trop grandes*)
     let pls =
       match view with None -> raise View_expected | Some v -> lines_crop pl v
     in
-    begin
-      if Debug.debug && List.length pls > 1 then
-        print_endline "Cropping overflowing Lines for FIG rendering";
-      List.iter (fun pl -> draw_lines pl ~dev ?dep view) pls
-    end
+    if Debug.debug && List.length pls > 1 then
+      print_endline "Cropping overflowing Lines for FIG rendering";
+    List.iter (fun pl -> draw_lines pl ~dev ?dep view) pls)
   else draw_lines pl ~dev ?dep view
 
 let draw_poly pl ?(dev = !default_device) ?border_color ?dep view =
@@ -1246,107 +1246,103 @@ let rec draw_grid gl ?(dev = !default_device) ?(wire = true) plot_func m (p1, p2
     =
   let h = Array.length m - 1 and w = Array.length m.(0) - 1 in
   (* w,i=lignes, h,j=colonnes *)
-  begin
-    let { r; g; b } = !current_color in
-    match dev with
-    | X11 -> raise (Not_implemented "X11 draw_grid")
-    | GL ->
-        enter3d (p1, p2);
-        begin
-          match !gl with
-          | Some list when not !reset_gllist -> GlList.call list
-          | _ ->
-              (* on stocke les ordres graphiques dans une "display_list" opengl *)
-              let list = GlList.create `compile_and_execute in
-              let { Point3.x = x1; y = y1; z = zmin } = p1
-              and { Point3.x = x2; y = y2; z = zmax } = p2 in
-              let dx = (x2 -. x1) /. float w and dy = (y2 -. y1) /. float h in
-              let setcolor =
-                if (r *. r) +. (g *. g) +. (b *. b) > 1. then fun z ->
-                  let c = (z -. zmin) /. (zmax -. zmin) in
-                  GlDraw.color (r *. c, g *. c, b *. c)
-                else fun z ->
-                  let c = (z -. zmin) /. (zmax -. zmin) in
-                  GlDraw.color
-                    (c +. r -. (r *. c), c +. g -. (g *. c), c +. b -. (b *. c))
-              in
-              (* solid triangles(quads) *)
-              for i = 0 to h - 1 do
-                let y = y1 +. (float i *. dy) in
-                for j = 0 to w - 1 do
-                  let x = x1 +. (float j *. dx) and z = m.(i).(j) in
-                  setcolor z;
-                  GlDraw.begins `quads;
-                  GlDraw.vertex3 (x, y, z);
-                  let z = m.(i + 1).(j) in
-                  setcolor z;
-                  GlDraw.vertex3 (x, y +. dy, z);
-                  let z = m.(i + 1).(j + 1) in
-                  setcolor z;
-                  GlDraw.vertex3 (x +. dx, y +. dy, z);
-                  let z = m.(i).(j + 1) in
-                  setcolor z;
-                  GlDraw.vertex3 (x +. dx, y, z);
-                  GlDraw.ends ()
-                done
+  let { r; g; b } = !current_color in
+  match dev with
+  | X11 -> raise (Not_implemented "X11 draw_grid")
+  | GL -> (
+      enter3d (p1, p2);
+      match !gl with
+      | Some list when not !reset_gllist -> GlList.call list
+      | _ ->
+          (* on stocke les ordres graphiques dans une "display_list" opengl *)
+          let list = GlList.create `compile_and_execute in
+          let { Point3.x = x1; y = y1; z = zmin } = p1
+          and { Point3.x = x2; y = y2; z = zmax } = p2 in
+          let dx = (x2 -. x1) /. float w and dy = (y2 -. y1) /. float h in
+          let setcolor =
+            if (r *. r) +. (g *. g) +. (b *. b) > 1. then fun z ->
+              let c = (z -. zmin) /. (zmax -. zmin) in
+              GlDraw.color (r *. c, g *. c, b *. c)
+            else fun z ->
+              let c = (z -. zmin) /. (zmax -. zmin) in
+              GlDraw.color
+                (c +. r -. (r *. c), c +. g -. (g *. c), c +. b -. (b *. c))
+          in
+          (* solid triangles(quads) *)
+          for i = 0 to h - 1 do
+            let y = y1 +. (float i *. dy) in
+            for j = 0 to w - 1 do
+              let x = x1 +. (float j *. dx) and z = m.(i).(j) in
+              setcolor z;
+              GlDraw.begins `quads;
+              GlDraw.vertex3 (x, y, z);
+              let z = m.(i + 1).(j) in
+              setcolor z;
+              GlDraw.vertex3 (x, y +. dy, z);
+              let z = m.(i + 1).(j + 1) in
+              setcolor z;
+              GlDraw.vertex3 (x +. dx, y +. dy, z);
+              let z = m.(i).(j + 1) in
+              setcolor z;
+              GlDraw.vertex3 (x +. dx, y, z);
+              GlDraw.ends ()
+            done
+          done;
+          GlDraw.color (r, g, b);
+
+          if wire then begin
+            (* rem: pas pour xfig, utiliser des polygones à bord plutôt  ? *)
+            (*   GlDraw.polygon_mode ~face:`both `line ; *)
+            (*   for i=0 to (h-1) do *)
+            (*     let y = -.600. /. 800. +. (float i) *. dy in *)
+            (*       for j=0 to (w-1) do *)
+            (*         let x  = -.1. +. (float j) *. dx *)
+            (*         and z = m.(i).(j) in *)
+            (*    GlDraw.begins `quads; *)
+            (*    GlDraw.vertex3(x, y, z); *)
+            (*    let z = m.(i+1).(j) in *)
+            (*      GlDraw.vertex3(x, y +. dy, z); *)
+            (*      let z = m.(i+1).(j+1) in *)
+            (*        GlDraw.vertex3(x +. dx, y +. dy, z); *)
+            (*        let z = m.(i).(j+1) in *)
+            (*          GlDraw.vertex3(x +. dx, y, z); *)
+            (*          GlDraw.ends () *)
+            (*       done; *)
+            (*   done; *)
+            (*  GlDraw.polygon_mode ~face:`both `fill ; *)
+
+            (*GlDraw.line_width 1.5;*)
+            (* on trace une ligne sur deux*)
+            for ii = 0 to h / 2 do
+              let i = ii * 2 in
+              let y = y1 +. (float i *. dy) and z = m.(i).(0) in
+              GlDraw.begins `line_strip;
+              GlDraw.vertex3 (x1, y, z);
+              for j = 1 to w do
+                let x = x1 +. (float j *. dx) and z = m.(i).(j) in
+                GlDraw.vertex3 (x, y, z)
               done;
-              GlDraw.color (r, g, b);
-
-              if wire then begin
-                (* rem: pas pour xfig, utiliser des polygones à bord plutôt  ? *)
-                (*   GlDraw.polygon_mode ~face:`both `line ; *)
-                (*   for i=0 to (h-1) do *)
-                (*     let y = -.600. /. 800. +. (float i) *. dy in *)
-                (*       for j=0 to (w-1) do *)
-                (*         let x  = -.1. +. (float j) *. dx *)
-                (*         and z = m.(i).(j) in *)
-                (*    GlDraw.begins `quads; *)
-                (*    GlDraw.vertex3(x, y, z); *)
-                (*    let z = m.(i+1).(j) in *)
-                (*      GlDraw.vertex3(x, y +. dy, z); *)
-                (*      let z = m.(i+1).(j+1) in *)
-                (*        GlDraw.vertex3(x +. dx, y +. dy, z); *)
-                (*        let z = m.(i).(j+1) in *)
-                (*          GlDraw.vertex3(x +. dx, y, z); *)
-                (*          GlDraw.ends () *)
-                (*       done; *)
-                (*   done; *)
-                (*  GlDraw.polygon_mode ~face:`both `fill ; *)
-
-                (*GlDraw.line_width 1.5;*)
-                (* on trace une ligne sur deux*)
-                for ii = 0 to h / 2 do
-                  let i = ii * 2 in
-                  let y = y1 +. (float i *. dy) and z = m.(i).(0) in
-                  GlDraw.begins `line_strip;
-                  GlDraw.vertex3 (x1, y, z);
-                  for j = 1 to w do
-                    let x = x1 +. (float j *. dx) and z = m.(i).(j) in
-                    GlDraw.vertex3 (x, y, z)
-                  done;
-                  GlDraw.ends ()
-                done;
-                for jj = 0 to w / 2 do
-                  let j = jj * 2 in
-                  let x = x1 +. (float j *. dx) and z = m.(0).(j) in
-                  GlDraw.begins `line_strip;
-                  GlDraw.vertex3 (x, y1, z);
-                  for i = 1 to h do
-                    let y = y1 +. (float i *. dy) and z = m.(i).(j) in
-                    GlDraw.vertex3 (x, y, z)
-                  done;
-                  GlDraw.ends ()
-                done
-                (*GlDraw.line_width 1.;*)
-              end;
-              leave3d ();
-              GlList.ends ();
-              gl := Some list
-        end
-    | FIG ->
-        let draw () = draw_grid ~dev:GL ~wire:true gl plot_func m (p1, p2) in
-        gl2fig draw plot_func
-  end
+              GlDraw.ends ()
+            done;
+            for jj = 0 to w / 2 do
+              let j = jj * 2 in
+              let x = x1 +. (float j *. dx) and z = m.(0).(j) in
+              GlDraw.begins `line_strip;
+              GlDraw.vertex3 (x, y1, z);
+              for i = 1 to h do
+                let y = y1 +. (float i *. dy) and z = m.(i).(j) in
+                GlDraw.vertex3 (x, y, z)
+              done;
+              GlDraw.ends ()
+            done
+            (*GlDraw.line_width 1.;*)
+          end;
+          leave3d ();
+          GlList.ends ();
+          gl := Some list)
+  | FIG ->
+      let draw () = draw_grid ~dev:GL ~wire:true gl plot_func m (p1, p2) in
+      gl2fig draw plot_func
 (*    set_color !current_color;;*)
 
 let rec draw_curve3d ?(dev = !default_device) gl plot_func p3d (p1, p2) =
@@ -1504,7 +1500,7 @@ let draw_axis a ?(dev = !default_device) view =
           "ERROR: cannot draw axis with infinite view (%f,%f,%f,%f)" x0 y0 x1 y1
         |> print_endline;
         ([], []))
-      else begin
+      else
         (* calcul des unités des axes: (à améliorer) *)
         let mymodf x =
           let m = floor x +. 1. in
@@ -1620,7 +1616,6 @@ let draw_axis a ?(dev = !default_device) view =
         in
         a.ticks <- Some t;
         t
-      end
     end
     else match a.ticks with None -> raise View_expected | Some t -> t
   in
@@ -1663,23 +1658,25 @@ let gl_mouse_motion x y =
 
 let print_help () =
   print_endline
-    "\n\
-     ---------------:-------Oplot help---------\n\
-     'h' or '?'     : this help message.\n\n\
-     'q' or ESC     : quit\n\n\
-     arrows         : rotate the 2D scene\n\
-     '='            : 2D zoom out\n\
-     SHIFT '='      : 2D zoom in\n\
-     TAB:           : reset 2D position\n\n\
-     CTRL arrows:   : rotate the 3D scene\n\
-     CTRL       '=' : 3D zoom out\n\
-     CTRL SHIFT '=' : 3D zoom in\n\
-     CTRL TAB       : reset 3D position\n\
-     CTRL 'l'       : toggle 3D lighting\n\n\
-     'f'            : toggle fullscreen (may change screen resolution)\n\
-     CTRL 's'       : save screenshot (default file = \"oplot.bmp\")\n\n\
-     CTRL 'z'       : suspend (for debugging)\n\
-     ---------------:---------------------------\n"
+  @@ Printf.sprintf
+       "\n\
+        ---------------:-------Oplot help---------\n\
+        'h' or '?'     : this help message.\n\n\
+        'q' or ESC     : quit\n\n\
+        arrows         : rotate the 2D scene\n\
+        '='            : 2D zoom out\n\
+        SHIFT '='      : 2D zoom in\n\
+        TAB            : reset 2D position\n\n\
+        CTRL arrows:   : rotate the 3D scene\n\
+        CTRL       '=' : 3D zoom out\n\
+        CTRL SHIFT '=' : 3D zoom in\n\
+        CTRL TAB       : reset 3D position\n\
+        CTRL 'l'       : toggle 3D lighting\n\n\
+        CTRL 'f'       : toggle fullscreen (may change screen resolution)\n\
+        CTRL 's'       : save screenshot (default file = \"%s\")\n\n\
+        CTRL 'z'       : suspend (for debugging)\n\
+        ---------------:---------------------------\n"
+       Sysinit.png_output
 
 (* gestion du clavier sous SDL. Retourne true si on doit quitter
    (escape ou z) *)
@@ -1723,7 +1720,8 @@ let sdl_key key =
       reset_gllist := true;
       Debug.print "Light = %b" !light_on
   (* GlLight.material ~face:`front (`emission (c.r/.10., c.g/.10., c.b/.10., 1.)) *)
-  | k when k = Sdl.K.f -> toggle_fullscreen ()
+  | k when k = Sdl.K.f && modifier land Sdl.Kmod.ctrl <> 0 ->
+      toggle_fullscreen ()
   | k when k = Sdl.K.p -> decr pause_pass
   (* à améliorer, ex stack *)
   | k when k = Sdl.K.escape || k = Sdl.K.q ->
@@ -1883,9 +1881,9 @@ let do_pause ?(dev = !default_device) t =
       Graphics.synchronize ();
       if t = 0 then ignore (Graphics.read_key ())
       else ignore (Unix.select [] [] [] (float t /. 1000.))
-  | GL ->
+  | GL -> (
       if !counter <= !pause_pass then ()
-      else begin
+      else
         match !pause_time with
         | None ->
             pause_time := Some (time ());
@@ -1897,8 +1895,7 @@ let do_pause ?(dev = !default_device) t =
                 resume_pause := false;
                 do_not_draw := false;
                 pause_pass := !counter;
-                pause_time := None)
-      end
+                pause_time := None))
   | FIG -> ()
 
 (* ajouter warning *)
