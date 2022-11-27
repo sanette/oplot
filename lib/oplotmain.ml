@@ -74,14 +74,18 @@ let win = ref None
 let glcontext = ref None
 
 let sdl_init ~show () =
-  if Sdl.Init.test (Sdl.was_init None) Sdl.Init.video then
-    Debug.print "Using existing SDL context." (* Sdl.quit () *)
-  else begin
-    Debug.print "Raising up SDL...";
-    let crucial () =
-      Sdl.init_sub_system Sdl.Init.(timer + video) |> go;
+  let crucial () =
+    if Sdl.Init.test (Sdl.was_init None) Sdl.Init.video then
+      Debug.print "Using existing SDL context." (* Sdl.quit () *)
+    else begin
+      Debug.print "Raising up SDL...";
+      Sdl.init Sdl.Init.(timer + video + events) |> go;
+      win := None;
+      at_exit Sdl.quit;
       (* if !multisampling then Sdlgl.set_attr [ Sdlgl.MULTISAMPLEBUFFERS 1; *)
       (*             Sdlgl.MULTISAMPLESAMPLES 4]; *)
+    end;
+    if !win = None then begin
       match
         Sdl.create_window "Oplot - SDL Window"
           ~w:(!window_width + !left_margin + !right_margin)
@@ -89,16 +93,17 @@ let sdl_init ~show () =
           Sdl.Window.(opengl + resizable)
       with
       | Error (`Msg e) ->
-          Sdl.log "Create window error: %s" e;
-          raise (Debug.Sdl_error e)
+        Sdl.log "Create window error: %s" e;
+        raise (Debug.Sdl_error e)
       | Ok w ->
-          win := Some w;
-          if not show then Sdl.hide_window w;
-          Sdlttf.init () |> go;
-          glcontext := Some (Sdl.gl_create_context w |> go)
-    in
-    (try crucial ()
-     with Debug.Sdl_error _ -> (
+        win := Some w
+    end;
+    if not show then do_option !win Sdl.hide_window;
+    Sdlttf.init () |> go;
+    glcontext := Option.map (fun w -> Sdl.gl_create_context w |> go) !win;
+  in
+  (try crucial ()
+   with Debug.Sdl_error _ -> (
        Debug.print "Hum... Trying again";
        Sdl.quit ();
        multisampling := false;
@@ -110,14 +115,13 @@ let sdl_init ~show () =
          Sdl.quit ();
          exit 1));
 
-    (* GlClear.color (float_of_color !default_bg_color);
-       GlClear.clear [ `depth ];
-       Sdlgl.swap_buffers (); *)
-    (* List.iter (fun e -> Sdl.set_event_state e Sdl.enable) *)
-    (*   Sdl.Event.[key_down; mouse_button_down; window_event; sys_wm_event]; *)
-    window_open := true;
-    Debug.print "sdl_init OK"
-  end
+  (* GlClear.color (float_of_color !default_bg_color);
+     GlClear.clear [ `depth ];
+     Sdlgl.swap_buffers (); *)
+  (* List.iter (fun e -> Sdl.set_event_state e Sdl.enable) *)
+  (*   Sdl.Event.[key_down; mouse_button_down; window_event; sys_wm_event]; *)
+  window_open := true;
+  Debug.print "sdl_init OK"
 
 let gtk_init () = ()
 (* pour le moment, c'est fait avant par gtk *)
@@ -197,7 +201,8 @@ let close ?(dev = !default_device) () =
       let close () =
         Sdl.delay 50l;
         do_option !glcontext Sdl.gl_delete_context;
-        Sdl.quit ()
+        do_option !win Sdl.destroy_window;
+        win := None
       in
       try close ()
       with Debug.Sdl_error e ->

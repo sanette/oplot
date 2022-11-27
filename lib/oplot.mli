@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.6
+    @version 0.61
     @author San Vũ Ngọc *)
 
 (** {1 Example}
