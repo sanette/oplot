@@ -13,6 +13,9 @@ Some of the examples make use of the `gsl` library.  Make sure your
 system has the `libgsl` package and add the `ocaml` bindings with
 `opam install gsl`.
 
+The `#thread` directive seems to be necessary for the `emacs` ocaml toplevel,
+but not for `utop` for some reason...
+
 `example.ml`:
 ![example](example.png)
 

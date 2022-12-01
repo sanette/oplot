@@ -81,7 +81,7 @@ let sdl_init ~show () =
       Debug.print "Raising up SDL...";
       Sdl.init Sdl.Init.(timer + video + events) |> go;
       win := None;
-      at_exit Sdl.quit;
+      at_exit (fun () -> Debug.print "Quitting SDL"; Sdl.quit ());
       (* if !multisampling then Sdlgl.set_attr [ Sdlgl.MULTISAMPLEBUFFERS 1; *)
       (*             Sdlgl.MULTISAMPLESAMPLES 4]; *)
     end;
@@ -201,7 +201,8 @@ let close ?(dev = !default_device) () =
       let close () =
         Sdl.delay 50l;
         do_option !glcontext Sdl.gl_delete_context;
-        do_option !win Sdl.destroy_window;
+        do_option !win (fun w -> Debug.print "Destroying window";
+                         Sdl.destroy_window w);
         win := None
       in
       try close ()
@@ -2123,7 +2124,7 @@ let rec sdl_mainloop sh wait =
   incr frames;
   let t = int_of_float (unixtime ()) in
   if t <> !ot then begin
-    Debug.print "%d fps\n%!" !frames;
+    Debug.print "%d fps%!" !frames;
     frames := 0;
     ot := t
   end;
@@ -2232,6 +2233,8 @@ let write_eps ?output ?(pdf = true) sh =
   in
   if has_latex sh then (
     shell "%s --input=%s %s" convert latex_header xfig_output_file;
+    shell "cp %s.%s %s" (Filename.remove_extension xfig_output_file)
+      (if pdf then "pdf" else "eps") output;
     (* attention xfig ecrit les caractères non ascii sous la forme \xxx; il
        faudrait faire une première passe pour les transformer. ocaml devrait
        faire ça tout seul avec print_string *)

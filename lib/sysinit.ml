@@ -6,7 +6,7 @@ module Sdlttf = Tsdl_ttf.Ttf
 exception Shell_error of (int * string)
 
 let go = Debug.go
-let concat = Filename.concat
+let ( // ) = Filename.concat
 
 (* installation *)
 let oplot_dir =
@@ -18,17 +18,17 @@ let oplot_dir =
       Debug.print "Directory: %s" (basename (dirname exe));
       match (basename exe, basename (dirname exe)) with
       | "goplot", "bin" (* = cas où la librairie est utilisée par goplot *) ->
-          Filename.concat (dirname (dirname exe)) "share/goplot"
+          (dirname (dirname exe)) // "share/goplot"
       | "goplot.exe", "gui"
       (* = lancement par dune exec gui/goplot.exe *)
       (* | "utop.exe", ".utop"       (\* = lancement par dune utop *\)
        *   -> Filename.concat (dirname (dirname exe)) "share" *)
       | _ -> (
           try
-            let system = Unix.open_process_in "opam var prefix" in
+            let system = Unix.open_process_in "opam var share" in
             let res = input_line system in
             match Unix.close_process_in system with
-            | Unix.WEXITED 0 -> Filename.concat res "share/oplot"
+            | Unix.WEXITED 0 -> res // "oplot"
             | _ ->
                 failwith
                   "Please tell me where the oplot directory is, by setting the \
@@ -51,7 +51,7 @@ let first_time = ref true
 (* répertoire perso. Inutilisé pour le moment *)
 let home_dir =
   let home = try Sys.getenv "HOME" with Not_found -> "." in
-  let home_dir_name = concat home ".oplot" in
+  let home_dir_name = home // ".oplot" in
   if Sys.file_exists home_dir_name then
     if (Unix.stat home_dir_name).Unix.st_kind = Unix.S_DIR then (
       first_time := false;
@@ -79,18 +79,18 @@ let init_font_path ?(fontname = "FreeSans.ttf") var =
   let searchlist =
     [
       fontname;
-      concat oplot_dir fontname;
-      concat "/usr/share/fonts/truetype/freefont/" fontname;
-      concat "/usr/share/fonts/truetype/dejavu/" fontname;
-      concat "/usr/share/fonts/TTF/" fontname;
-      concat "/usr/share/vlc/skins2/fonts/" fontname;
+      oplot_dir // fontname;
+      "/usr/share/fonts/truetype/freefont/" // fontname;
+      "/usr/share/fonts/truetype/dejavu/" //fontname;
+      "/usr/share/fonts/TTF/" // fontname;
+      "/usr/share/vlc/skins2/fonts/" // fontname;
     ]
   in
   let rec loop l =
     match l with
     | [] ->
-        print_endline ("Fatal error: font " ^ fontname ^ " not found");
-        raise Not_found
+       print_endline ("Fatal error: font " ^ fontname ^ " not found");
+       raise Not_found
     | s :: ll -> if Sys.file_exists s then var := s else loop ll
   in
   loop searchlist
@@ -108,20 +108,20 @@ let current_font = ref (Sdlttf.open_font !font_path !current_font_size |> go)
 (* device ghostscript: verifier qu'on a bien pngalpha avec *)
 (* gs -h. Sinon mettre autre chose ? png??? *)
 
-let xfig_output_file = concat !tmp_dir "oplot.fig"
+let xfig_output_file = !tmp_dir // "oplot.fig"
 
 (* any other way ??: *)
-let xfig_main_channel = ref (open_out (concat !tmp_dir ".dummy.main"))
+let xfig_main_channel = ref (open_out (!tmp_dir // ".dummy.main"))
 
 (* let (xfig_main_file , xfig_main_channel) = Filename.open_temp_file
    "oplot_fig" ".main";; *)
 let () = close_out !xfig_main_channel
-let xfig_head_channel = ref (open_out (concat !tmp_dir ".dummy.head"))
+let xfig_head_channel = ref (open_out (!tmp_dir // ".dummy.head"))
 let () = close_out !xfig_head_channel
 let fig_color_counter = ref 32
-let latex_header = concat oplot_dir "header.tex"
-let eps_output_file = concat !tmp_dir "oplot.eps"
-let pdf_output_file = concat !tmp_dir "oplot.pdf"
+let latex_header = oplot_dir // "header.tex"
+let eps_output_file = !tmp_dir // "oplot.eps"
+let pdf_output_file = !tmp_dir // "oplot.pdf"
 (* doit être le même que xfig_output_file, avec extension eps (pour
    fig2eps). L'implémenter directement ainsi ? *)
 
@@ -149,7 +149,7 @@ let remove_tmp_dir () =
   in
   List.iter
     (fun s ->
-      let file = concat !tmp_dir s in
+      let file = !tmp_dir // s in
       if Sys.file_exists file then Sys.remove file)
     filelist;
   try Unix.rmdir !tmp_dir with
@@ -179,7 +179,7 @@ let has_fig2dev = has_exe "fig2dev"
 let fig2ps =
   if has_exe "fig2ps" then "fig2ps"
   else
-    let local = concat oplot_dir "fig2eps" in
+    let local = oplot_dir // "fig2eps" in
     if Sys.file_exists local then begin
       if (Unix.stat local).st_perm <> 0o755 then Unix.chmod local 0o755;
       local

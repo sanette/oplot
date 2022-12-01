@@ -1,7 +1,4 @@
 (* User-defined animation *)
-#use "topfind";;
-#thread;;
-#require "oplot";;
 
 open Oplot.Plt;;
 
@@ -17,3 +14,4 @@ let anim v dev =
 ;;
 
 display [ v; Color red; t; Color cyan; User anim ] ~dev:gl;;
+quit ()
