@@ -9,6 +9,20 @@ let go = Debug.go
 let ( // ) = Filename.concat
 
 (* installation *)
+let share_dir () =
+  try
+    let system = Unix.open_process_in "opam var share" in
+    let res = input_line system in
+    match Unix.close_process_in system with
+    | Unix.WEXITED 0 -> res // "oplot"
+    | _ -> failwith "Cannot find share dir. Please set the environment variable \
+                     OPLOTDIR."
+  with _ ->
+    Debug.print "No oplot installation found. Using current dir.";
+    Filename.current_dir_name
+
+let share_dir = share_dir ()
+
 let oplot_dir =
   try Sys.getenv "OPLOTDIR" with
   | Not_found -> (
@@ -23,28 +37,8 @@ let oplot_dir =
       (* = lancement par dune exec gui/goplot.exe *)
       (* | "utop.exe", ".utop"       (\* = lancement par dune utop *\)
        *   -> Filename.concat (dirname (dirname exe)) "share" *)
-      | _ -> (
-          try
-            let system = Unix.open_process_in "opam var share" in
-            let res = input_line system in
-            match Unix.close_process_in system with
-            | Unix.WEXITED 0 -> res // "oplot"
-            | _ ->
-                failwith
-                  "Please tell me where the oplot directory is, by setting the \
-                   environment variable OPLOTDIR."
-          with _ ->
-            Debug.print "No oplot installation found. Using current dir.";
-            Filename.current_dir_name))
+      | _ -> share_dir)
   | e -> raise e
-
-(* let oplot_dir = ref oplot_dir
- *
- * let set_oplot_dir s =
- *   oplot_dir := s;
- *   Debug.print "Using oplotdir=%s " !oplot_dir
- *
- * let () = set_oplot_dir !oplot_dir *)
 
 let first_time = ref true
 
@@ -80,6 +74,7 @@ let init_font_path ?(fontname = "FreeSans.ttf") var =
     [
       fontname;
       oplot_dir // fontname;
+      share_dir // fontname;
       "/usr/share/fonts/truetype/freefont/" // fontname;
       "/usr/share/fonts/truetype/dejavu/" //fontname;
       "/usr/share/fonts/TTF/" // fontname;
