@@ -4,8 +4,9 @@
  (public_names example logistique anim matrix surf3d example_pdf)
  (libraries oplot))
 
-(executables
- (names gamma gslex)
- (modules gamma gslex)
- (public_names gamma gslex)
- (libraries gsl oplot))
+; uncomment these if you have installed the gsl package
+; (executables
+;  (names gamma gslex)
+;  (modules gamma gslex)
+;  (public_names gamma gslex)
+;  (libraries gsl oplot))

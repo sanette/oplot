@@ -1,4 +1,4 @@
-# Running the examples
+# Running the examples interactively
 
 Once the `oplot` library is installed, examples can be run in an ocaml
 toplevel (for instance `utop`), or directly like this (*):
