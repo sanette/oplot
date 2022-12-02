@@ -8,4 +8,5 @@
 
 (rule
  (alias runtest)
- (action (run %{exe:test.exe})))
+ (action
+  (run %{exe:test.exe})))
