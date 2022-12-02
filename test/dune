@@ -1,0 +1,11 @@
+(executable
+ (name test)
+ (libraries oplot))
+
+(alias
+ (name buildtest)
+ (deps test.exe))
+
+(rule
+ (alias runtest)
+ (action (run %{exe:test.exe})))
