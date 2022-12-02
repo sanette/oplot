@@ -73,6 +73,7 @@ let init_font_path ?(fontname = "FreeSans.ttf") var =
   let searchlist =
     [
       fontname;
+      ".." // fontname; (* for dune runtest *)
       oplot_dir // fontname;
       share_dir // fontname;
       "/usr/share/fonts/truetype/freefont/" // fontname;
