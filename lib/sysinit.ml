@@ -87,8 +87,7 @@ let init_font_path ?(fontname = "FreeSans.ttf") var =
     | [] ->
        print_endline ("Fatal error: font " ^ fontname ^ " not found");
        raise Not_found
-    | s :: ll -> print_endline s;
-      if Sys.file_exists s then var := s else loop ll
+    | s :: ll -> if Sys.file_exists s then var := s else loop ll
   in
   loop searchlist
 
