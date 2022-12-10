@@ -199,8 +199,8 @@ let close ?(dev = !default_device) () =
       window_open := false;
       if !fullscreen then toggle_fullscreen ();
       let close () =
-        Sdl.delay 50l;
         do_option !glcontext Sdl.gl_delete_context;
+        Sdl.delay 100l;
         do_option !win (fun w -> Debug.print "Destroying window";
                          Sdl.destroy_window w);
         win := None
@@ -2078,7 +2078,7 @@ let graphics_key key =
 
 let graphics_event () =
   let status =
-    Graphics.wait_next_event [ Graphics.Key_pressed; Graphics.Button_down ]
+    Graphics.(wait_next_event [Key_pressed; Button_down])
   in
   if status.Graphics.keypressed then graphics_key status.Graphics.key
   else if status.Graphics.button then (

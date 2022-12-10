@@ -1,4 +1,4 @@
 (library
  (name oplot)
  (public_name oplot)
- (libraries graphics tsdl tsdl-image tsdl-ttf lablgl))
+ (libraries tsdl tsdl-image tsdl-ttf lablgl))

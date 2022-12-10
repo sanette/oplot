@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.61
+    @version %%VERSION%%
     @author San Vũ Ngọc *)
 
 (** {1 Example}
@@ -192,7 +192,7 @@ module Plt : sig
   val adapt_plot :
     (float -> float) -> ?pas:float -> float -> float -> plot_object
   (** Similar to {!line_plot_f}, but the plot will be dynamically cropped to the
-      current {!view} object. It returns an {!Adapt} object. *)
+      current {!type-view} object. It returns an {!Adapt} object. *)
 
   val anim_plot :
     (float -> float -> float) ->
@@ -232,7 +232,7 @@ module Plt : sig
 
   val latex :
     string -> ?size:int -> ?align:align -> float -> float -> plot_object
-  (** Similar to {!text} but the rendered text is the result of LaTeX
+  (** Similar to {!val-text} but the rendered text is the result of LaTeX
       compilation of the given string. *)
 
   val view : float -> float -> float -> float -> plot_object

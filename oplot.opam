@@ -15,7 +15,6 @@ depends: [
   "tsdl-ttf" {>= "0.3"}
   "tsdl" {>= "0.9.6"}
   "lablgl" {>= "1.06"}
-  "graphics" {>= "4.05.0"}
   "ocaml" {>= "4.05.0"}
   "dune" {>= "2.7" & >= "1.11"}
   "odoc" {with-doc}

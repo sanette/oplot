@@ -4,6 +4,7 @@ let () = Debug.print "* Loading renderinit"
 
 open Tsdl
 open Oplotdef
+module Graphics = Make_graphics.G
 
 let window_open = ref false
 let interrupt_request = ref false
@@ -148,7 +149,7 @@ let int_of_color c =
 
 let rgb_of_color c =
   let r, g, b = int_of_color c in
-  Graphics.rgb r g b
+  (r lsl 16) + (g lsl 8) + b
 
 let opaque c =
   let r, g, b = int_of_color c in

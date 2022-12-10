@@ -3,10 +3,10 @@ Debug.print "* Loading oplot"
 (* Simple mathematical plotter library for `ocaml` with fast graphics (opengl),
    LaTeX display, and high quality vector output (xfig, postscript or PDF)
 
-    copyright (c) 2006-2022 VU NGOC San *)
+    Copyright (c) 2006-2022 VU NGOC San *)
 
 (* This program was initially developped by the author at the University of
-   Grenoble. *)
+   Grenoble a long time ago. *)
 
 (* This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

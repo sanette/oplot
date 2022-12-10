@@ -1,5 +1,5 @@
 (* interface glut bidon, à partir de 0.3 *)
-(* les anciennes versions sont en comentaires, et ne marchent que si insérées
+(* les anciennes versions sont en commentaires, et ne marchent que si insérées
    dans oplotmain.ml *)
 (* nécessite lablglut *)
 

@@ -1,5 +1,5 @@
-(*  on met ici ce qui est indépendant de la boucle de rendu *)
-(* essentiellement les types et les constructeurs *)
+(* On met ici ce qui est indépendant de la boucle de rendu; *)
+(* essentiellement les types et les constructeurs. *)
 
 open Points
 
