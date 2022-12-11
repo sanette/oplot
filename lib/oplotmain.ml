@@ -200,9 +200,20 @@ let close ?(dev = !default_device) () =
       if !fullscreen then toggle_fullscreen ();
       let close () =
         do_option !glcontext Sdl.gl_delete_context;
-        Sdl.delay 100l;
+        glcontext := None;
         do_option !win (fun w -> Debug.print "Destroying window";
                          Sdl.destroy_window w);
+        (* The followig is a workaround for the weird bug on Mac OS 13.0.1 with
+           cocoa video driver which prevents windows to close in an interactive
+           toplevel session. For some reason the window will close if we
+           initialise a subsystem that was not already initialised, here
+           joystick. *)
+        if !Sys.interactive && Sdl.get_current_video_driver () = Some "cocoa"
+        then begin
+          Debug.print "cocoa workaround";
+          go @@ Sdl.(init Init.joystick);
+          Sdl.(quit_sub_system Init.joystick)
+        end;
         win := None
       in
       try close ()
@@ -2078,7 +2089,7 @@ let graphics_key key =
 
 let graphics_event () =
   let status =
-    Graphics.(wait_next_event [Key_pressed; Button_down])
+    Graphics.wait_next_event [ Graphics.Key_pressed; Graphics.Button_down ]
   in
   if status.Graphics.keypressed then graphics_key status.Graphics.key
   else if status.Graphics.button then (
