@@ -201,6 +201,7 @@ let close ?(dev = !default_device) () =
       let close () =
         Sdl.delay 50l;
         do_option !glcontext Sdl.gl_delete_context;
+        glcontext := None;
         do_option !win (fun w -> Debug.print "Destroying window";
                          Sdl.destroy_window w);
         (* Workaround for the weird bug on Mac OS 13.0.1 with cocoa video driver
