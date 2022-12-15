@@ -83,6 +83,25 @@ let window_os_size () =
   round (float (!window_width  + !left_margin + !right_margin) /. !dpi_scale),
   round (float (!window_height  + !top_margin + !bottom_margin) /. !dpi_scale)
 
+let sdl_get_dpi_scale () =
+  match
+    Sdl.create_window "Oplot - SDL Window" ~w:64 ~h:64
+      Sdl.Window.(opengl + resizable + allow_highdpi + hidden)
+  with
+  | Error (`Msg e) ->
+    Debug.print "Cannot open test window: %s" e; 1.
+  | Ok win ->
+    let w, h = Sdl.get_window_size win in (* size in OS pixels *)
+    let rw, rh = Sdl.gl_get_drawable_size win in (* size in hardware pixels *)
+    if (rw, rh) <> (w, h) then begin
+      let dpi_xscale = float rw /. float w in
+      let dpi_yscale = float rh /. float h in
+      Debug.print "This display imposes a hard scaling of (%f,%f)."
+        dpi_xscale dpi_yscale;
+      min dpi_xscale dpi_yscale
+    end
+    else 1.
+
 let sdl_init ~show () =
   let crucial () =
     if Sdl.Init.test (Sdl.was_init None) Sdl.Init.video then
@@ -102,6 +121,7 @@ let sdl_init ~show () =
     end;
     if !win = None then begin
       scale_window ();
+      dpi_scale := sdl_get_dpi_scale ();
       let w, h = window_os_size () in
       match
         Sdl.create_window "Oplot - SDL Window" ~w ~h
@@ -112,16 +132,10 @@ let sdl_init ~show () =
         raise (Debug.Sdl_error e)
       | Ok wn ->
         win := Some wn;
-        let w, h = Sdl.get_window_size wn in
-        let rw, rh = Sdl.gl_get_drawable_size wn in (* size in hardware pixels *)
-        if (rw, rh) <> (w, h) then begin
-          let dpi_xscale = float rw /. float w in
-          let dpi_yscale = float rh /. float h in
-          Debug.print "This display imposes a hard scaling of (%f,%f)."
-            dpi_xscale dpi_yscale;
-          dpi_scale := min dpi_xscale dpi_yscale;
+        if !dpi_scale <> 1. then
+          let rw, rh = Sdl.gl_get_drawable_size wn in
+          (* size in hardware pixels *)
           resize_window rw rh
-        end
     end;
     if not show then do_option !win Sdl.hide_window;
     Sdlttf.init () |> go;
