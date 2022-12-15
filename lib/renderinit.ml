@@ -3,8 +3,8 @@ let () = Debug.print "* Loading renderinit"
 (* initialisations liées aux sorties graphiques et à la boucle de rendu *)
 
 open Tsdl
+open Common
 open Oplotdef
-module Graphics = Make_graphics.G
 
 let window_open = ref false
 let interrupt_request = ref false
@@ -12,18 +12,7 @@ let fullscreen = ref false
 let multisampling = ref true
 let gl_scale = ref 2.
 
-(* sorties graphiques utilisables par l'utilisateur *)
-type user_device =
-  | X11_d
-  | GL_d
-  | FIG_d
-  | XFIG_d
-  | EPS_d
-  | PDF_d
-  | GV_d
-  | BMP_d
-  | PNG_d
-  | IMG_d
+
 
 (* user aliases *)
 let x11 = X11_d
@@ -298,20 +287,19 @@ let get_dpi_from_xdpyinfo () =
       (match line with None -> "none" | Some s -> s);
     None
 
-(* TODO use new SDL2 function for this *)
 let get_dpi () =
   match (get_dpi_from_xdpyinfo (), get_dpi_from_xrandr ()) with
   | None, None -> None
   | Some dpi, None | None, Some dpi -> Some dpi
   | Some d1, Some d2 ->
-      if abs (d1 - d2) > 5 then begin
-        Debug.print
-          "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing \
-           the smaller."
-          d2 d1;
-        Some (min d1 d2)
-      end
-      else Some d2
+    if abs (d1 - d2) > 5 then begin
+      Debug.print
+        "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing \
+         the smaller."
+        d2 d1;
+      Some (min d1 d2)
+    end
+    else Some d2
 
 let init () =
   Debug.print "init";

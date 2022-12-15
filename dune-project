@@ -1,6 +1,6 @@
 (lang dune 2.7)
 (name oplot)
-(version "0.7-pre")
+(version "0.70-pre")
 (generate_opam_files true)
 (license ISC)
 (maintainers "Vu Ngoc San <san.vu-ngoc@laposte.net>")

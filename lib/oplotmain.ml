@@ -9,12 +9,16 @@ Debug.print "* Loading oplotmain"
 (* utiliser pdflatex ? (cf le module ~/.inkscape/extensions/textext.py)
 *)
 
-open Tsdl
-open Points
-open Point2
-open Oplotdef
-open Sysinit
-open Renderinit
+
+module Make (Graphics : Make_graphics.GRAPHICS) = struct
+
+  open Tsdl
+  open Common
+  open Points
+  open Point2
+  open Oplotdef
+  open Sysinit
+  open Renderinit
 
 let go = Debug.go
 let do_option o f = Option.iter f o
@@ -54,7 +58,10 @@ let reset_time ?(t0 = 0) () = initial_time := time () - t0
 (**********************************************************)
 
 let scale x = x *. !gl_scale
-let iscale i = int_of_float ((float i *. !gl_scale) +. 0.5)
+let round x = int_of_float (x +. 0.5)
+let iscale i = round (float i *. !gl_scale)
+
+let dpi_scale = ref 1.
 
 let scale_window =
   let scaled = ref false in
@@ -84,23 +91,38 @@ let sdl_init ~show () =
       at_exit (fun () -> Debug.print "Quitting SDL"; Sdl.quit ());
       (* if !multisampling then Sdlgl.set_attr [ Sdlgl.MULTISAMPLEBUFFERS 1; *)
       (*             Sdlgl.MULTISAMPLESAMPLES 4]; *)
+      match Sdl.get_display_dpi 0 with
+      | Ok (x,_,_) -> Debug.print "DPI detected by SDL: %f" x;
+        gl_scale := max 1. (x /. 110.)
+      | Error (`Msg m) ->
+        Debug.print "Cannot get DPI from SDL: %s" m
     end;
     if !win = None then begin
+      let w = round (float !window_width /. !dpi_scale)
+              + !left_margin + !right_margin in
+      let h = round (float !window_height /. !dpi_scale)
+              + !top_margin + !bottom_margin in
       match
-        Sdl.create_window "Oplot - SDL Window"
-          ~w:(!window_width + !left_margin + !right_margin)
-          ~h:(!window_height + !top_margin + !bottom_margin)
-          Sdl.Window.(opengl + resizable)
+        Sdl.create_window "Oplot - SDL Window" ~w ~h Sdl.Window.(opengl + resizable)
       with
       | Error (`Msg e) ->
         Sdl.log "Create window error: %s" e;
         raise (Debug.Sdl_error e)
-      | Ok w ->
-        win := Some w
+      | Ok wn ->
+        win := Some wn;
+        let rw, rh = Sdl.gl_get_drawable_size wn in (* size in hardware pixels *)
+        if (rw, rh) <> (w, h) then begin
+          let dpi_xscale = float rw /. float w in
+          let dpi_yscale = float rh /. float h in
+          Debug.print "This display imposes a hard scaling of (%f,%f)."
+            dpi_xscale dpi_yscale;
+          dpi_scale := min dpi_xscale dpi_yscale;
+          gl_scale := !gl_scale *. !dpi_scale
+        end
     end;
     if not show then do_option !win Sdl.hide_window;
     Sdlttf.init () |> go;
-    glcontext := Option.map (fun w -> Sdl.gl_create_context w |> go) !win;
+    glcontext := Option.map (fun w -> Sdl.gl_create_context w |> go) !win
   in
   (try crucial ()
    with Debug.Sdl_error _ -> (
@@ -822,7 +844,7 @@ let text_image message size flag =
   done;
   (pixel, w, h)
 
-(* idem pour une image sdl rgba generale . inutilisé pour le moment *)
+(* idem pour une image sdl rgba générale. inutilisé pour le moment *)
 let image_of_sdl image =
   let w, h = Sdl.get_surface_size image in
   let image_width = power_of_two w and image_height = power_of_two h in
@@ -2088,9 +2110,7 @@ let graphics_key key =
   | _ -> false
 
 let graphics_event () =
-  let status =
-    Graphics.wait_next_event [ Graphics.Key_pressed; Graphics.Button_down ]
-  in
+  let status = Graphics.(wait_next_event [ Key_pressed; Button_down ]) in
   if status.Graphics.keypressed then graphics_key status.Graphics.key
   else if status.Graphics.button then (
     graphics_resize ();
@@ -2226,11 +2246,11 @@ let xfig_mainloop sh =
     xfig_output_file xfig_output_file xfig_output_file;
   shell "rm %s.head %s.main" xfig_output_file xfig_output_file
 
-let rec has_latex sh =
+let rec sh_has_latex sh =
   match sh with
   | Sheet [] -> false
   | Text t when t.flag = Latex -> true
-  | Sheet (po :: ssh) -> has_latex po || has_latex (Sheet ssh)
+  | Sheet (po :: ssh) -> sh_has_latex po || sh_has_latex (Sheet ssh)
   | _ -> false
 
 (* Transforme le fichier fig en eps/pdf. utiliser psmerge pour plusieurs pages /
@@ -2242,10 +2262,12 @@ let write_eps ?output ?(pdf = true) sh =
     | Some s -> s
     | None -> if pdf then pdf_output_file else eps_output_file
   in
-  if has_latex sh then (
+  if sh_has_latex sh then (
     shell "%s --input=%s %s" convert latex_header xfig_output_file;
-    shell "cp %s.%s %s" (Filename.remove_extension xfig_output_file)
-      (if pdf then "pdf" else "eps") output;
+    shell "cp %s.%s %s"
+      (Filename.remove_extension xfig_output_file)
+      (if pdf then "pdf" else "eps")
+      output;
     (* attention xfig ecrit les caractères non ascii sous la forme \xxx; il
        faudrait faire une première passe pour les transformer. ocaml devrait
        faire ça tout seul avec print_string *)
@@ -2402,6 +2424,8 @@ let interruption int =
 let () =
   Sys.set_signal Sys.sigusr1 (Sys.Signal_handle interruption);
   Sys.set_signal Sys.sigint (Sys.Signal_handle interruption)
+
+end
 
 (************************************************************************)
 

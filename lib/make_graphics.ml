@@ -3,13 +3,15 @@
 module type GRAPHICS = sig
   type color = int
   type event = Button_down | Button_up | Key_pressed | Mouse_motion | Poll
-  type status  = {
+
+  type status = {
     mouse_x : int;  (** X coordinate of the mouse *)
     mouse_y : int;  (** Y coordinate of the mouse *)
     button : bool;  (** true if a mouse button is pressed *)
     keypressed : bool;  (** true if a key has been pressed *)
     key : char;  (** the character for the key pressed *)
   }
+
   val open_graph : string -> unit
   val close_graph : unit -> unit
   val synchronize : unit -> unit
@@ -34,19 +36,20 @@ module type GRAPHICS = sig
   val text_size : string -> int * int
 end
 
-let implem : (module GRAPHICS) option ref = ref None
-
 module Dummy = struct
   let noway s = raise (Oplotdef.Not_implemented ("Graphics." ^ s))
+
   type color = int
   type event = Button_down | Button_up | Key_pressed | Mouse_motion | Poll
-  type status  = {
+
+  type status = {
     mouse_x : int;  (** X coordinate of the mouse *)
     mouse_y : int;  (** Y coordinate of the mouse *)
     button : bool;  (** true if a mouse button is pressed *)
     keypressed : bool;  (** true if a key has been pressed *)
     key : char;  (** the character for the key pressed *)
   }
+
   let open_graph _ = noway "open_graph"
   let close_graph () = noway "close_graph"
   let synchronize () = noway "synchronize"
@@ -70,12 +73,3 @@ module Dummy = struct
   let wait_next_event _ = noway "wait_next_event"
   let text_size _ = noway "text_size"
 end
-
-let () = implem := Some (module Dummy : GRAPHICS)
-
-module G =
-  (val (match !implem with
-       | None -> failwith "An implementation of the Graphics module is \
-                           required. This should not happen."
-       | Some m -> m)
-     : GRAPHICS)

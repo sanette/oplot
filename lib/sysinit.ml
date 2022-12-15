@@ -15,8 +15,9 @@ let share_dir () =
     let res = input_line system in
     match Unix.close_process_in system with
     | Unix.WEXITED 0 -> res // "oplot"
-    | _ -> failwith "Cannot find share dir. Please set the environment variable \
-                     OPLOTDIR."
+    | _ ->
+        failwith
+          "Cannot find share dir. Please set the environment variable OPLOTDIR."
   with _ ->
     Debug.print "No oplot installation found. Using current dir.";
     Filename.current_dir_name
@@ -32,12 +33,13 @@ let oplot_dir =
       Debug.print "Directory: %s" (basename (dirname exe));
       match (basename exe, basename (dirname exe)) with
       | "goplot", "bin" (* = cas où la librairie est utilisée par goplot *) ->
-          (dirname (dirname exe)) // "share/goplot"
+          dirname (dirname exe) // "share/goplot"
       | "goplot.exe", "gui"
       (* = lancement par dune exec gui/goplot.exe *)
       (* | "utop.exe", ".utop"       (\* = lancement par dune utop *\)
        *   -> Filename.concat (dirname (dirname exe)) "share" *)
-      | _ -> share_dir)
+      | _ ->
+          share_dir)
   | e -> raise e
 
 let first_time = ref true
@@ -73,11 +75,12 @@ let init_font_path ?(fontname = "FreeSans.ttf") var =
   let searchlist =
     [
       fontname;
-      ".." // "share" // fontname; (* for dune runtest *)
+      ".." // "share" // fontname;
+      (* for dune runtest *)
       oplot_dir // fontname;
       share_dir // fontname;
       "/usr/share/fonts/truetype/freefont/" // fontname;
-      "/usr/share/fonts/truetype/dejavu/" //fontname;
+      "/usr/share/fonts/truetype/dejavu/" // fontname;
       "/usr/share/fonts/TTF/" // fontname;
       "/usr/share/vlc/skins2/fonts/" // fontname;
     ]
@@ -85,8 +88,8 @@ let init_font_path ?(fontname = "FreeSans.ttf") var =
   let rec loop l =
     match l with
     | [] ->
-       print_endline ("Fatal error: font " ^ fontname ^ " not found");
-       raise Not_found
+        print_endline ("Fatal error: font " ^ fontname ^ " not found");
+        raise Not_found
     | s :: ll -> if Sys.file_exists s then var := s else loop ll
   in
   loop searchlist

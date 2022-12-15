@@ -4,6 +4,7 @@
 
 #require "oplot";;
 
+open Oplot.Common;;
 open Oplot.Plt;;
 
 let a = axis 0. 0.
