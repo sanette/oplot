@@ -1806,18 +1806,6 @@ let sdl_mouse_close () =
   (* Sdl.set_event_state Sdl.Event.mouse_button_up Sdl.disable; *)
   ()
 
-(* on ne veut pas de retard avec la souris *)
-let sdl_mouse_update_old event =
-  let e = Sdl.Event.create () in
-  let rec loop event =
-    if Sdl.poll_event (Some e) then begin
-      Debug.print "flush";
-      loop e
-    end
-    else go @@ Sdl.push_event event |> ignore
-  in
-  loop event
-
 let sdl_mouse_action _mouse =
   (* sdl_mouse_update mouse; *)
   let but, (x, y) = Sdl.get_mouse_state () in
@@ -1880,12 +1868,17 @@ let sdl_event eo =
             sdl_mouse_wheel e;
             false
         | `Key_down -> sdl_key e
-        | `Window_event
-          when Sdl.Event.(window_event_enum (get e window_event_id))
-               = `Size_changed ->
+        | `Window_event -> begin
+          match Sdl.Event.(window_event_enum (get e window_event_id)) with
+            | `Size_changed ->
             let w, h = Sdl.Event.(get e window_data1, get e window_data2) in
             sdl_resize (Int32.to_int w) (Int32.to_int h);
             false
+            | `Resized -> Debug.print "Resized event"; false
+            | `Close -> true
+            | _ -> Debug.print "Other WM event=%i"
+                     Sdl.Event.(get e window_event_id); false
+        end
         | _ -> false
       in
       quit || loop None
