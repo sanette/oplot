@@ -12,8 +12,6 @@ let fullscreen = ref false
 let multisampling = ref true
 let gl_scale = ref 2.
 
-
-
 (* user aliases *)
 let x11 = X11_d
 and gl = GL_d
@@ -292,14 +290,14 @@ let get_dpi () =
   | None, None -> None
   | Some dpi, None | None, Some dpi -> Some dpi
   | Some d1, Some d2 ->
-    if abs (d1 - d2) > 5 then begin
-      Debug.print
-        "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing \
-         the smaller."
-        d2 d1;
-      Some (min d1 d2)
-    end
-    else Some d2
+      if abs (d1 - d2) > 5 then begin
+        Debug.print
+          "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing \
+           the smaller."
+          d2 d1;
+        Some (min d1 d2)
+      end
+      else Some d2
 
 let init () =
   Debug.print "init";

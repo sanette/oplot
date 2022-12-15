@@ -64,46 +64,48 @@
 
     {%html:<img src="example2.png" class="oplot" alt="oplot example">%} *)
 
-
-
 module Common = Common
 
 (**/**)
+
 module type GRAPHICS = Make_graphics.GRAPHICS
+
 module Make = Make.Make
+
 (**/**)
 
-(** Types of points *)
 module Points = Points
+(** Types of points *)
 
 (** {1 Main Oplot functions}
 
     This module contains all plotting functions. *)
 
-
 (**/**)
+
 module type PltS = Make_plt.S
+
 (* We explicitly make this signature public to allow its re-use by other
    libraries extending oplot, cf oplot-graphics. *)
 (**/**)
 
+module Plt : PltS
 (** Main Oplot functions
 
     This module contains all functions for defining and rendering plots. *)
-module Plt : PltS
-
 
 (**/**)
+
 module type InternalS = Make_internal.S
+
 (* We explicitly make this signature public to allow its re-use by other
    libraries extending oplot, cf oplot-graphics. *)
 (**/**)
 
+module Internal : InternalS
 (** {1 Oplot internals}
 
     Oplot internal functions are useful for creating user interfaces. *)
-module Internal : InternalS
-
 
 (*
    Local Variables:

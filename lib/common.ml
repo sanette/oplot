@@ -4,7 +4,6 @@ open Points
 
 (* sorties graphiques de base implémentées par le programme *)
 type plot_device = X11 | GL | FIG
-
 type mrange = { mutable min : float; mutable max : float }
 type points = point list
 type view = point * point
@@ -12,14 +11,14 @@ type view = point * point
 (* à remplacer par des "ranges" optionnels ? *)
 
 type view3 = point3 * point3
-(* coordonnées des diagonales du cube *)(* gérer aussi la couleur comme les view ou attachée à chaque objet ? *)
-type color = { r : float; g : float; b : float }
+(* coordonnées des diagonales du cube *)
+(* gérer aussi la couleur comme les view ou attachée à chaque objet ? *)
 
+type color = { r : float; g : float; b : float }
 type text_image = ([ `luminance_alpha ], [ `ubyte ]) GlPix.t * int * int
 (* (image + dimensions de la partie intéressante) *)
 
 type align = CENTER | LEFT | RIGHT
-
 type text_flag = Normal | Latex
 
 type text = {
@@ -59,7 +58,6 @@ type motion3d =
   | Zoom of ((float -> float) * float option)
 
 type move3d = { move : motion3d; time : mrange; mutable init_time : int option }
-
 type image = ([ `rgba ], [ `ubyte ]) GlPix.t * int * int
 
 type latex = {
@@ -95,6 +93,7 @@ type plot_object =
   (* =une fonction utilisateur *)
   (* | Anim of (float -> plot_object)*)
   | Sheet of plot_object list
+
 (* faire un type plot adaptatif qui recalcule les points en fonction de la
    résolution de la fenêtre, et d'adapte aux grandes dérivées. *)
 (* inclure les transitions dans le mécanisme de pause ? cf zoom *)

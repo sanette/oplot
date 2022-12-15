@@ -1,10 +1,10 @@
 (* User-defined animation *)
 
-open Oplot.Plt;;
+open Oplot.Plt
 
 let v = view 0. (-1.) 20. 1.
 let t = text "Hello world" 10. 0. ~size:50
-let f t1 t2 x = sin (((1. +. sin t1) *. (x -. 10.)) -. t2);;
+let f t1 t2 x = sin (((1. +. sin t1) *. (x -. 10.)) -. t2)
 
 let anim v dev =
   let p =

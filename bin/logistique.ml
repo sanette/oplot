@@ -1,9 +1,7 @@
 (* Oplot example of User object: bifurcation diagram for the logistic map *)
 
-
-
-open Oplot.Plt;;
-open Oplot.Points.Point2;;
+open Oplot.Plt
+open Oplot.Points.Point2
 
 let rec iterate r x_init i =
   if i == 1 then x_init
@@ -33,7 +31,7 @@ let rec trace ~progress x0 x1 step v dev =
 
 let logistique ?(progress = true) ~step v dev =
   trace ~progress (fst v).x (snd v).x step v dev;
-  copy_back_buffer ();;
+  copy_back_buffer ()
 
 (* thanks to this, the picture is not erased in the second display invocation
    below when there is no Pause. *)
@@ -56,6 +54,8 @@ display
     User (logistique ~progress:false ~step:0.001);
     finished;
     Freeze 0;
-  ];;
+  ]
+;;
+
 (* BUG: Freeze prevents proper rescaling of the window *)
 quit ()

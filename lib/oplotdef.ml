@@ -20,7 +20,6 @@ let blue = { r = 0.; g = 0.; b = 1. }
 let yellow = { r = 1.; g = 1.; b = 0. }
 let cyan = { r = 0.; g = 1.; b = 1. }
 let magenta = { r = 1.; g = 0.; b = 1. }
-
 let window_width = ref 400 (* after init, this will hold the true pixel size *)
 
 (* taille sans les marges en pixels. Sera multiplié par gl_scale. *)
@@ -36,8 +35,6 @@ let bottom_margin = ref 10
 
 (* nbre max de points déterminé automatiquement dans une courbe paramétrée *)
 let maxpoints = 3000
-
-
 let current_view3d : view3 option ref = ref None
 (* attention pas réentrant...*)
 
@@ -57,7 +54,6 @@ let get_view3 () =
 (* inutile ? *)
 
 let move_text text pos = text.pos <- pos
-
 let gllist_empty () : gllist = ref None
 
 (* animation ? *)

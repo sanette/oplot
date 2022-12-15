@@ -11,7 +11,6 @@ module type S = sig
   val cyan : color
   val magenta : color
 
-
   (** {2 Defining plot objects}
 
       'Defining' means computing the coordinates of the points and lines to
@@ -100,8 +99,8 @@ module type S = sig
       compilation of the given string. *)
 
   val view : float -> float -> float -> float -> plot_object
-  (** [view x0 y0 x1 y1] creates a {!Common.View} object indicating the bounding box
-      for subsequent drawings. *)
+  (** [view x0 y0 x1 y1] creates a {!Common.View} object indicating the bounding
+      box for subsequent drawings. *)
 
   (** {3 3D objects}
 

@@ -18,7 +18,6 @@ Debug.print "* Loading oplot"
    General Public License for more details. *)
 
 module Points = Points
-
 module Common = Common
 
 module type GRAPHICS = Make_graphics.GRAPHICS
@@ -29,11 +28,12 @@ module Main = Make.Make (Make_graphics.Dummy)
    all usual functions and Internal for specific needs like goplot *)
 
 module type PltS = Make_plt.S
+
 module Plt = Main
 
 module type InternalS = Make_internal.S
-module Internal = Main
 
+module Internal = Main
 module Make = Make.Make
 
 (*

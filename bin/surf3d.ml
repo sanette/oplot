@@ -1,14 +1,11 @@
-
-
-
-open Oplot.Common;;
-open Oplot.Plt;;
+open Oplot.Common
+open Oplot.Plt
 
 let a = axis 0. 0.
 let fx u v = 0.3 +. ((1. +. (0.5 *. cos u)) *. cos v)
 let fy u v = 0.2 +. ((1. +. (0.5 *. cos u)) *. sin v)
 let fz u _ = 0.5 *. sin u
-let s = surf3d_plot ~wire:true ~width:10 ~height:50 fx fy fz 0. 0. 3. 6.29;;
+let s = surf3d_plot ~wire:true ~width:10 ~height:50 fx fy fz 0. 0. 3. 6.29
 
 let set_wire po wire =
   match po with
@@ -21,7 +18,7 @@ let set_wire po wire =
 let t = text "Press CTRL-L to toggle lighting" 0.3 0.1;;
 
 display [ set_wire s false; t ];;
-display [ Color cyan; set_wire s true; Color red; a ] ~dev:gl;;
+display [ Color cyan; set_wire s true; Color red; a ] ~dev:gl
 
 let fx u v =
   ((3. *. (1. +. sin v)) +. (2. *. (1. -. (cos v /. 2.)) *. cos u)) *. cos v

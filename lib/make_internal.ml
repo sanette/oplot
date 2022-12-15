@@ -1,14 +1,17 @@
 module type S = sig
   (** {1 Oplot internals}
 
-    Oplot internal functions are useful for creating user interfaces. *)
+      Oplot internal functions are useful for creating user interfaces. *)
 
   open Common
+
   val reset_time : ?t0:int -> unit -> unit
   val has_anim : plot_object -> bool
   val gllist_empty : unit -> gllist
   val get_view : view ref -> plot_object
+
   type gl_handler = SDL | GLUT | GTK
+
   val set_default_gl : gl_handler -> unit
   val init : unit -> unit
   val get_mouse_x : unit -> int
@@ -32,7 +35,9 @@ module type S = sig
   val gl_mouse_motion : int -> int -> unit
   val interrupt : unit -> unit
   val latex_to_sdl : string -> int -> Tsdl.Sdl.surface
+
   exception Shell_error of (int * string)
+
   val oplot_dir : string
   val home_dir : string
   val first_time : unit -> bool
