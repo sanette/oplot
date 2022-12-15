@@ -81,6 +81,18 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       round (float (!window_height + !top_margin + !bottom_margin) /. !dpi_scale)
     )
 
+  (* The following is a workaround for the weird bug on Mac OS 13.0.1 with cocoa
+     video driver which prevents windows to close in an interactive toplevel
+     session. For some reason the window will close if we initialise a subsystem
+     that was not already initialised, here joystick. *)
+  let sdl_destroy_window win =
+    Sdl.destroy_window win;
+    if !Sys.interactive && Sdl.get_current_video_driver () = Some "cocoa" then begin
+      Debug.print "cocoa workaround";
+      (go @@ Sdl.(init Init.joystick));
+      Sdl.(quit_sub_system Init.joystick)
+    end
+
   let sdl_get_dpi_scale () =
     match
       Sdl.create_window "Oplot - SDL Window" ~w:64 ~h:64
@@ -93,7 +105,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         let w, h = Sdl.get_window_size win in
         (* size in OS pixels *)
         let rw, rh = Sdl.gl_get_drawable_size win in
-        Sdl.destroy_window win;
+        sdl_destroy_window win;
         (* size in hardware pixels *)
         if (rw, rh) <> (w, h) then begin
           let dpi_xscale = float rw /. float w in
@@ -237,18 +249,6 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         with
         | Error (`Msg e) -> Sdl.log "Fullscreen error: %s" e
         | Ok () -> fullscreen := not !fullscreen)
-
-  (* The following is a workaround for the weird bug on Mac OS 13.0.1 with cocoa
-     video driver which prevents windows to close in an interactive toplevel
-     session. For some reason the window will close if we initialise a subsystem
-     that was not already initialised, here joystick. *)
-  let sdl_destroy_window win =
-    Sdl.destroy_window win;
-    if !Sys.interactive && Sdl.get_current_video_driver () = Some "cocoa" then begin
-      Debug.print "cocoa workaround";
-      (go @@ Sdl.(init Init.joystick));
-      Sdl.(quit_sub_system Init.joystick)
-    end
 
   let close ?(dev = !default_device) () =
     match dev with
