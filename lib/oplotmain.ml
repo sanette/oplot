@@ -112,6 +112,7 @@ let sdl_init ~show () =
         raise (Debug.Sdl_error e)
       | Ok wn ->
         win := Some wn;
+        let w, h = Sdl.get_window_size wn in
         let rw, rh = Sdl.gl_get_drawable_size wn in (* size in hardware pixels *)
         if (rw, rh) <> (w, h) then begin
           let dpi_xscale = float rw /. float w in
@@ -1831,15 +1832,16 @@ let sdl_mouse_wheel mouse =
    mdecr zoom3d; mdecr zoom3d
    end *)
 
-let sdl_resize w h = (* hardware pixels *)
-  resize_window w h;
+let sdl_resize w h = (* OS pixels *)
+  (* We convert to hardware pixels *)
+  let hx = round (float h *. !dpi_scale) in
+  let wx = round (float w *. !dpi_scale) in
+  resize_window wx hx;
   do_option !win (fun win ->
-      let w = !window_width + !left_margin + !right_margin in
-      let h = !window_height + !top_margin + !bottom_margin in
-      let s = Sdl.gl_get_drawable_size win in
-      if s <> (w, h) then (
-        Debug.print "force resize";
-        let w,h = window_os_size () in
+      let rw, rh = Sdl.gl_get_drawable_size win in
+      if (rw, rh) <> (wx, hx) then (
+        Debug.print "Obtained: (%i,%i), wanted: (%i,%i). Forcing resize."
+        rw rh wx hx;
         Sdl.set_window_size win ~w ~h));
   (* WARNING this triggers events ?*)
   gl_resize ()
