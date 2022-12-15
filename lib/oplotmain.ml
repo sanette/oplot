@@ -238,6 +238,18 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         | Error (`Msg e) -> Sdl.log "Fullscreen error: %s" e
         | Ok () -> fullscreen := not !fullscreen)
 
+  (* The following is a workaround for the weird bug on Mac OS 13.0.1 with cocoa
+     video driver which prevents windows to close in an interactive toplevel
+     session. For some reason the window will close if we initialise a subsystem
+     that was not already initialised, here joystick. *)
+  let sdl_destroy_window win =
+    Sdl.destroy_window win;
+    if !Sys.interactive && Sdl.get_current_video_driver () = Some "cocoa" then begin
+      Debug.print "cocoa workaround";
+      (go @@ Sdl.(init Init.joystick));
+      Sdl.(quit_sub_system Init.joystick)
+    end
+
   let close ?(dev = !default_device) () =
     match dev with
     | X11 -> Graphics.close_graph ()
@@ -249,18 +261,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
           glcontext := None;
           do_option !win (fun w ->
               Debug.print "Destroying window";
-              Sdl.destroy_window w);
-          (* The followig is a workaround for the weird bug on Mac OS 13.0.1 with
-             cocoa video driver which prevents windows to close in an interactive
-             toplevel session. For some reason the window will close if we
-             initialise a subsystem that was not already initialised, here
-             joystick. *)
-          if !Sys.interactive && Sdl.get_current_video_driver () = Some "cocoa"
-          then begin
-            Debug.print "cocoa workaround";
-            (go @@ Sdl.(init Init.joystick));
-            Sdl.(quit_sub_system Init.joystick)
-          end;
+              sdl_destroy_window w);
           win := None
         in
         try close ()
