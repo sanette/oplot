@@ -70,15 +70,18 @@ let scale_window =
       window_width := iscale !window_width;
       window_height := iscale !window_height;
       fwindow_width := float !window_width;
-      fwindow_height := float !window_height
+      fwindow_height := float !window_height;
+      scaled := true
     end
-    else print_endline "ALREADY SCALED! BUG"
-
-let () = scale_window ()
+    else print_endline "Already scaled."
 
 (* initialisation d'une fenêtre opengl par SDL *)
 let win = ref None
 let glcontext = ref None
+
+let window_os_size () =
+  round (float !window_width /. !dpi_scale) + !left_margin + !right_margin,
+  round (float !window_height /. !dpi_scale) + !top_margin + !bottom_margin
 
 let sdl_init ~show () =
   let crucial () =
@@ -98,12 +101,11 @@ let sdl_init ~show () =
         Debug.print "Cannot get DPI from SDL: %s" m
     end;
     if !win = None then begin
-      let w = round (float !window_width /. !dpi_scale)
-              + !left_margin + !right_margin in
-      let h = round (float !window_height /. !dpi_scale)
-              + !top_margin + !bottom_margin in
+      scale_window ();
+      let w, h = window_os_size () in
       match
-        Sdl.create_window "Oplot - SDL Window" ~w ~h Sdl.Window.(opengl + resizable)
+        Sdl.create_window "Oplot - SDL Window" ~w ~h
+          Sdl.Window.(opengl + resizable + allow_highdpi)
       with
       | Error (`Msg e) ->
         Sdl.log "Create window error: %s" e;
@@ -117,7 +119,10 @@ let sdl_init ~show () =
           Debug.print "This display imposes a hard scaling of (%f,%f)."
             dpi_xscale dpi_yscale;
           dpi_scale := min dpi_xscale dpi_yscale;
-          gl_scale := !gl_scale *. !dpi_scale
+          window_width := round (float !window_width *. !dpi_scale);
+          window_height := round (float !window_height *. !dpi_scale);
+          fwindow_width := float !window_width;
+          fwindow_height := float !window_height
         end
     end;
     if not show then do_option !win Sdl.hide_window;
