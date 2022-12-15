@@ -80,8 +80,8 @@ let win = ref None
 let glcontext = ref None
 
 let window_os_size () =
-  round (float !window_width /. !dpi_scale) + !left_margin + !right_margin,
-  round (float !window_height /. !dpi_scale) + !top_margin + !bottom_margin
+  round (float (!window_width  + !left_margin + !right_margin) /. !dpi_scale),
+  round (float (!window_height  + !top_margin + !bottom_margin) /. !dpi_scale)
 
 let sdl_init ~show () =
   let crucial () =
@@ -119,10 +119,7 @@ let sdl_init ~show () =
           Debug.print "This display imposes a hard scaling of (%f,%f)."
             dpi_xscale dpi_yscale;
           dpi_scale := min dpi_xscale dpi_yscale;
-          window_width := round (float !window_width *. !dpi_scale);
-          window_height := round (float !window_height *. !dpi_scale);
-          fwindow_width := float !window_width;
-          fwindow_height := float !window_height
+          resize_window rw rh
         end
     end;
     if not show then do_option !win Sdl.hide_window;
@@ -1834,14 +1831,15 @@ let sdl_mouse_wheel mouse =
    mdecr zoom3d; mdecr zoom3d
    end *)
 
-let sdl_resize w h =
+let sdl_resize w h = (* hardware pixels *)
   resize_window w h;
   do_option !win (fun win ->
       let w = !window_width + !left_margin + !right_margin in
       let h = !window_height + !top_margin + !bottom_margin in
-      let s = Sdl.get_window_size win in
+      let s = Sdl.gl_get_drawable_size win in
       if s <> (w, h) then (
         Debug.print "force resize";
+        let w,h = window_os_size () in
         Sdl.set_window_size win ~w ~h));
   (* WARNING this triggers events ?*)
   gl_resize ()
