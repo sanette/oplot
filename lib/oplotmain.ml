@@ -19,7 +19,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   open Renderinit
 
   let go = Debug.go
-  let do_option o f = Option.iter f o
+  let do_option o f = match o with
+    | Some x -> f x
+    | None -> ()
   let force_refresh = ref false
   let xfig_scale = 45.
   (* Un point xfig vaut 1/80 inch. Mais attention "When exporting to EPS,
@@ -142,7 +144,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       end;
       if not show then do_option !win Sdl.hide_window;
       Sdlttf.init () |> go;
-      glcontext := Option.map (fun w -> Sdl.gl_create_context w |> go) !win
+      glcontext := match !win with
+        | Some w -> Some (go @@ Sdl.gl_create_context w)
+        | None -> None
     in
     (try crucial ()
      with Debug.Sdl_error _ -> (
