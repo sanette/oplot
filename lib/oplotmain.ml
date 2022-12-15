@@ -19,9 +19,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   open Renderinit
 
   let go = Debug.go
-  let do_option o f = match o with
-    | Some x -> f x
-    | None -> ()
+  let do_option o f = match o with Some x -> f x | None -> ()
   let force_refresh = ref false
   let xfig_scale = 45.
   (* Un point xfig vaut 1/80 inch. Mais attention "When exporting to EPS,
@@ -86,7 +84,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let sdl_get_dpi_scale () =
     match
       Sdl.create_window "Oplot - SDL Window" ~w:64 ~h:64
-        Sdl.Window.(opengl + resizable + allow_highdpi + hidden)
+        Sdl.Window.(opengl + allow_highdpi + hidden)
     with
     | Error (`Msg e) ->
         Debug.print "Cannot open test window: %s" e;
@@ -95,6 +93,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         let w, h = Sdl.get_window_size win in
         (* size in OS pixels *)
         let rw, rh = Sdl.gl_get_drawable_size win in
+        Sdl.destroy_window win;
         (* size in hardware pixels *)
         if (rw, rh) <> (w, h) then begin
           let dpi_xscale = float rw /. float w in
@@ -144,7 +143,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       end;
       if not show then do_option !win Sdl.hide_window;
       Sdlttf.init () |> go;
-      glcontext := match !win with
+      glcontext :=
+        match !win with
         | Some w -> Some (go @@ Sdl.gl_create_context w)
         | None -> None
     in
