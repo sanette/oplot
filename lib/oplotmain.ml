@@ -89,6 +89,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     Sdl.destroy_window win;
     if !Sys.interactive && Sdl.get_current_video_driver () = Some "cocoa" then begin
       Debug.print "cocoa workaround";
+      Sdl.delay 100l;
       (go @@ Sdl.(init Init.joystick));
       Sdl.(quit_sub_system Init.joystick)
     end
@@ -261,7 +262,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
           glcontext := None;
           do_option !win (fun w ->
               Debug.print "Destroying window";
-              sdl_destroy_window w);
+              sdl_destroy_window w;
+              Sdl.(flush_events Event.first_event Event.last_event));
           win := None
         in
         try close ()
@@ -1886,26 +1888,23 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let rec loop eo =
       if eo <> None || Sdl.poll_event (Some e) then
         let quit = ref false in
-        let () = match Sdl.Event.(enum (get e typ)) with
-          | `Mouse_button_down ->
-            sdl_mouse_init e
-          | `Mouse_motion ->
-            sdl_mouse_action e
-          | `Mouse_button_up ->
-            sdl_mouse_close ()
-          | `Mouse_wheel ->
-            sdl_mouse_wheel e
+        let () =
+          match Sdl.Event.(enum (get e typ)) with
+          | `Mouse_button_down -> sdl_mouse_init e
+          | `Mouse_motion -> sdl_mouse_action e
+          | `Mouse_button_up -> sdl_mouse_close ()
+          | `Mouse_wheel -> sdl_mouse_wheel e
           | `Key_down -> quit := sdl_key e
           | `Window_event -> begin
               match Sdl.Event.(window_event_enum (get e window_event_id)) with
               | `Size_changed ->
-                let w, h =
-                  Sdl.Event.(get e window_data1, get e window_data2)
-                in
-                sdl_resize (Int32.to_int w) (Int32.to_int h)
+                  let w, h =
+                    Sdl.Event.(get e window_data1, get e window_data2)
+                  in
+                  sdl_resize (Int32.to_int w) (Int32.to_int h)
               | `Close ->
-                close ();
-                quit := true
+                  close ();
+                  quit := true
               | _ -> ()
             end
           | _ -> ()
