@@ -959,7 +959,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let pix = Sdl.get_surface_pixels s Bigarray.int8_unsigned in
     (* Debug.print "Bigarray dim=%i, w*h=%i, Raw=%i" (Bigarray.Array1.dim pix) *)
     (*   (w * h) (Raw.byte_size r); *)
-    assert (Bigarray.Array1.dim pix = w * h * 3);
+    assert (Bigarray.Array1.dim pix >= w * h * 3);
+    (* We put ">=" above instead of "=" because on macos we don't have strict
+       equality: w*h*3 + 2024, for some reason... *)
     let pitch = Sdl.get_surface_pitch s in
     (* For some reason, the image is upside-down, so we have to flip it while
        copying: *)
