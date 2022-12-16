@@ -8,3 +8,5 @@ do
     grep -v "^#" ../top/$name.ml > $name.ml
     echo "quit ()" >> $name.ml
 done
+
+dune fmt

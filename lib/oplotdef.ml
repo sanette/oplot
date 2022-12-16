@@ -20,10 +20,10 @@ let blue = { r = 0.; g = 0.; b = 1. }
 let yellow = { r = 1.; g = 1.; b = 0. }
 let cyan = { r = 0.; g = 1.; b = 1. }
 let magenta = { r = 1.; g = 0.; b = 1. }
-let window_width = ref 400 (* after init, this will hold the true pixel size *)
 
-(* taille sans les marges en pixels. Sera multiplié par gl_scale. *)
-let window_height = ref 300
+(* Taille sans les marges en pixels. Sera multiplié par gl_scale. *)
+let window_width = ref 640 (* after init, this will hold the true pixel size *)
+let window_height = ref 480
 let fwindow_width = ref (float !window_width)
 let fwindow_height = ref (float !window_height)
 

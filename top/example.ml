@@ -1,8 +1,8 @@
+(* Basic Oplot example *)
 #use "topfind";;
 #thread;;
 #require "oplot";;
 
-(* Basic Oplot example *)
 open Oplot.Plt;;
 
 let p = plot sin (-2.) 20.

@@ -1,4 +1,4 @@
-(* Basic Oplot example *)
+(* Plotting to a PDF file *)
 
 open Oplot.Plt
 

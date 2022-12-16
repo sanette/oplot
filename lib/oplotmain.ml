@@ -1885,43 +1885,32 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let e = match eo with Some e -> e | None -> Sdl.Event.create () in
     let rec loop eo =
       if eo <> None || Sdl.poll_event (Some e) then
-        let quit =
-          match Sdl.Event.(enum (get e typ)) with
+        let quit = ref false in
+        let () = match Sdl.Event.(enum (get e typ)) with
           | `Mouse_button_down ->
-              sdl_mouse_init e;
-              false
+            sdl_mouse_init e
           | `Mouse_motion ->
-              sdl_mouse_action e;
-              false
+            sdl_mouse_action e
           | `Mouse_button_up ->
-              sdl_mouse_close ();
-              false
+            sdl_mouse_close ()
           | `Mouse_wheel ->
-              sdl_mouse_wheel e;
-              false
-          | `Key_down -> sdl_key e
+            sdl_mouse_wheel e
+          | `Key_down -> quit := sdl_key e
           | `Window_event -> begin
               match Sdl.Event.(window_event_enum (get e window_event_id)) with
               | `Size_changed ->
-                  let w, h =
-                    Sdl.Event.(get e window_data1, get e window_data2)
-                  in
-                  sdl_resize (Int32.to_int w) (Int32.to_int h);
-                  false
-              | `Resized ->
-                  Debug.print "Resized event";
-                  false
+                let w, h =
+                  Sdl.Event.(get e window_data1, get e window_data2)
+                in
+                sdl_resize (Int32.to_int w) (Int32.to_int h)
               | `Close ->
-                  close ();
-                  true
-              | _ ->
-                  Debug.print "Other WM event=%i"
-                    Sdl.Event.(get e window_event_id);
-                  false
+                close ();
+                quit := true
+              | _ -> ()
             end
-          | _ -> false
+          | _ -> ()
         in
-        quit || loop None
+        !quit || loop None
       else false
     in
     loop eo

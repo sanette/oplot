@@ -1,7 +1,6 @@
+(* Three 3D views. *)
 #use "topfind";;
-
 #thread;;
-
 #require "oplot";;
 
 open Oplot.Common;;

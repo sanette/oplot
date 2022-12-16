@@ -1,4 +1,5 @@
 (* Basic Oplot example *)
+
 open Oplot.Plt
 
 let p = plot sin (-2.) 20.
