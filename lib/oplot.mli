@@ -64,9 +64,9 @@
 
     {%html:<img src="example2.png" class="oplot" alt="oplot example">%} *)
 
-module Common = Common
-
 (**/**)
+
+module Common = Common
 
 module type GRAPHICS = Make_graphics.GRAPHICS
 
