@@ -1,7 +1,7 @@
 (*
 
 Dynamical Systems plugin for Oplot
-San Vu Ngoc 
+San Vu Ngoc
 
 ---
 
@@ -32,7 +32,7 @@ Gsl.odeiv.step_apply step ~t:0. ~h:0.001 ~y:y ~yerr:yerr sys;;
 open Oplot.Plt
 open Oplot.Points
 open Point2
-module Osys = Oplot.Internal
+module Osys = Internal
 
 let to_vec3 a = (a.(0), a.(1), a.(2))
 

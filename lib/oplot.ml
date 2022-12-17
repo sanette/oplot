@@ -25,15 +25,17 @@ module type GRAPHICS = Make_graphics.GRAPHICS
 module Main = Make.Make (Make_graphics.Dummy)
 
 (* The initial modules are grouped and re-split into two main modules: Plt for
-   all usual functions and Internal for specific needs like goplot *)
+   all usual functions and Internal for specific needs like goplot. TODO split
+   this from stracth. *)
 
 module type PltS = Make_plt.S
 
-module Plt = Main
+module Plt = struct
+  include Common
+  include Main
+  module Internal = Main
+end
 
-module type InternalS = Make_internal.S
-
-module Internal = Main
 module Make = Make.Make
 
 (*

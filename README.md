@@ -19,7 +19,7 @@ Mathematical plotting library for ocaml
 
 + Many renderers
   + GPU graphics (opengl/sdl)
-  + X11 graphics
+  + Graphics package
   + high quality vector graphics in EPS or PDF files
   + xfig files
   + image screenshots
@@ -37,3 +37,18 @@ An official standalone GUI for `oplot`:
 
 The `top` directory contains examples that can be run from the ocaml
 toplevel. See the [README](top/README.md) file.
+
+## Dependencies
+
+* For PDF output you need to install the `fig2dev` system package.
+
+* For LaTeX display you need a working LaTeX installation; for
+instance install the `texlive` system package.
+
+* For using the Gnu Scientific Library, install the `gsl` opam package:
+```
+opam install gsl
+```
+
+* For rendering via the OCaml Graphics library, you need the
+`oplot-graphics` opam package.

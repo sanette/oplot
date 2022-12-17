@@ -94,19 +94,6 @@ module Plt : PltS
 
     This module contains all functions for defining and rendering plots. *)
 
-(**/**)
-
-module type InternalS = Make_internal.S
-
-(* We explicitly make this signature public to allow its re-use by other
-   libraries extending oplot, cf oplot-graphics. *)
-(**/**)
-
-module Internal : InternalS
-(** {1 Oplot internals}
-
-    Oplot internal functions are useful for creating user interfaces. *)
-
 (*
    Local Variables:
    compile-command:"cd ..;dune build"

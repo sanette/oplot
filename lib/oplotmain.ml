@@ -2139,6 +2139,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   (* initialisation d'une fenêtre graphique par le module Graphics *)
   let graphics_init () =
+    scale_window ();
     Graphics.open_graph (Printf.sprintf " %dx%d" !window_width !window_height);
     Graphics.set_window_title "Oplot - Graphics Window";
     Graphics.auto_synchronize false

@@ -1,6 +1,5 @@
 (* Three 3D views. *)
 
-open Oplot.Common
 open Oplot.Plt
 
 let a = axis 0. 0.
@@ -12,9 +11,8 @@ let s = surf3d_plot ~wire:true ~width:10 ~height:50 fx fy fz 0. 0. 3. 6.29
 let set_wire po wire =
   match po with
   | Surf3d ((fx, fy, fz, v3, _), _) ->
-      Surf3d ((fx, fy, fz, v3, wire), Oplot.Internal.gllist_empty ())
-  | Grid ((fm, v3, _), _) ->
-      Grid ((fm, v3, wire), Oplot.Internal.gllist_empty ())
+      Surf3d ((fx, fy, fz, v3, wire), Internal.gllist_empty ())
+  | Grid ((fm, v3, _), _) -> Grid ((fm, v3, wire), Internal.gllist_empty ())
   | _ -> raise Not_found
 
 let t = text "Press CTRL-L to toggle lighting" 0.3 0.1;;

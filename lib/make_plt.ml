@@ -1,6 +1,23 @@
 module type S = sig
   open Points
-  open Common
+
+  type plot_device = X11 | GL | FIG
+  type view = point * point
+  type view3 = point3 * point3
+  type points = point list
+  type axis
+  type image
+  type latex
+  type text
+  type imatrix = int array array
+  type fmatrix = float array array
+  type grid = fmatrix * view3 * bool
+  type surf3d = fmatrix * fmatrix * fmatrix * view3 * bool
+  type curve3d = point3 list * view3
+  type move3d
+  type gllist
+  type color = { r : float; g : float; b : float }
+  type align = CENTER | LEFT | RIGHT
 
   val black : color
   val white : color
@@ -16,6 +33,36 @@ module type S = sig
       'Defining' means computing the coordinates of the points and lines to
       display, but not actually displaying them. We call a "sheet" a list of
       objects to be displayed. *)
+
+  type plot_object =
+    | Points of points  (** A list of points. *)
+    | Lines of points list
+        (** The points of each sublist are joined by a line segment. *)
+    | Poly of points  (** Closed polygonal line. *)
+    | View of view option  (** Indicate the x-y range to display. *)
+    | Axis of axis  (** Axis with divisions. *)
+    | Color of color  (** Indicate the color to draw subsequent objects. *)
+    | Text of text  (** Position a text at some (x,y) coordinate. *)
+    | Matrix of imatrix
+        (** Checkboard-like matrix view with 0-255 greyscale. *)
+    | Grid of grid * gllist  (** 3D mountain-like representation of a matrix. *)
+    | Surf3d of surf3d * gllist  (** 3D parametric surface. *)
+    | Curve3d of curve3d * gllist  (** 3D points joined by line segments. *)
+    | Move3d of move3d  (** Animate the 3D object by a uniform rotation. *)
+    | Pause of int
+        (** Display the current state of the sheet, and wait before displaying
+            next object, but don't stop animation in the opengl window. This
+            only works for interactive displays using the {!GL} device. *)
+    | Freeze of int
+        (** Display the current state of the sheet and suspend all display for
+            the given time. *)
+    | Clear of color  (** Clear graphics. *)
+    | Adapt of
+        (view option * plot_object option) ref * (view option -> plot_object)
+        (** Any object that needs to adapt itself to the current View. *)
+    | User of (view -> plot_device -> unit)
+        (** Execute any user-defined program. *)
+    | Sheet of plot_object list  (** Group plot objects. *)
 
   (** {3 2D objects}
 
@@ -157,6 +204,8 @@ module type S = sig
 
       Various devices can be used to render the plots. *)
 
+  type user_device
+
   val display :
     ?dev:user_device ->
     ?fscreen:bool ->
@@ -245,4 +294,51 @@ module type S = sig
       hear my graphics card... *)
 
   (* val draw_points : points -> ?dev:plot_device -> ?dep:int -> view option -> unit *)
+
+  module Internal : sig
+    (** {1 Oplot internals}
+
+        Oplot internal functions are useful for creating user interfaces. *)
+
+    val reset_time : ?t0:int -> unit -> unit
+    val has_anim : plot_object -> bool
+    val gllist_empty : unit -> gllist
+    val get_view : view ref -> plot_object
+
+    type gl_handler = SDL | GLUT | GTK
+
+    val set_default_gl : gl_handler -> unit
+    val init : unit -> unit
+    val get_mouse_x : unit -> int
+    val get_mouse_y : unit -> int
+    val set_mouse_x : int -> unit
+    val set_mouse_y : int -> unit
+    val get_window_height : unit -> int
+    val get_frame_length : unit -> int
+    val set_frame_length : int -> unit
+    val gtk_mainloop : plot_object -> int
+    val gl_init : ?show:bool -> unit -> unit
+    val gl_resize : unit -> unit
+    val scale : float -> float
+    val iscale : int -> int
+    val point_of_pixel : int * int -> view option -> float * float
+    val set_line_width : ?dev:plot_device -> float -> unit
+    val set_point_size : ?dev:plot_device -> float -> unit
+    val get_light : unit -> bool
+    val toggle_light : unit -> unit
+    val force_refresh : unit -> unit
+    val gl_mouse_motion : int -> int -> unit
+    val interrupt : unit -> unit
+    val latex_to_sdl : string -> int -> Tsdl.Sdl.surface
+
+    exception Shell_error of (int * string)
+
+    val oplot_dir : string
+    val home_dir : string
+    val first_time : unit -> bool
+    val has_latex : bool
+    val has_gs : bool
+    val pngalpha : unit -> bool
+    val has_fig2dev : bool
+  end
 end

@@ -5,7 +5,6 @@
 
 #require "oplot";;
 
-open Oplot.Common;;
 open Oplot.Plt;;
 
 #use "ode.ml";;
