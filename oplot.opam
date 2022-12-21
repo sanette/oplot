@@ -11,12 +11,12 @@ tags: ["plot" "2D" "3D" "math"]
 homepage: "https://github.com/sanette/oplot"
 bug-reports: "https://github.com/sanette/oplot/issues"
 depends: [
+  "dune" {>= "2.7"}
   "tsdl-image" {>= "0.3.0"}
   "tsdl-ttf" {>= "0.3"}
   "tsdl" {>= "0.9.6"}
   "lablgl" {>= "1.06"}
   "ocaml" {>= "4.05.0"}
-  "dune" {>= "2.7" & >= "1.11"}
   "odoc" {with-doc}
 ]
 build: [

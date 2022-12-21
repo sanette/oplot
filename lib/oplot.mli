@@ -75,6 +75,7 @@ module Make = Make.Make
 (**/**)
 
 module Points = Points
+
 (** Types of points *)
 
 (** {1 Main Oplot functions}

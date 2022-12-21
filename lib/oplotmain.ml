@@ -1502,8 +1502,15 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         (* en remplacement: *)
         (* or use an "association list" (size,font) *)
         let size = max 6 (min 40 (iscale t.size) land 62) in
-        Graphics.set_font
-          (Printf.sprintf "-*-fixed-*-r-*-*-%d-*-*-*-*-*-*-*" size);
+        let font_desc =
+          Printf.sprintf "-*-fixed-*-r-*-*-%d-*-*-*-*-*-iso8859-*" size
+        in
+        let () =
+          try Graphics.set_font font_desc
+          with _ ->
+            Debug.print "Cannot find font: %s" font_desc;
+            Graphics.set_font "fixed"
+        in
         let w, h = Graphics.text_size t.text in
         let dx =
           match t.align with CENTER -> w / 2 | LEFT -> 0 | RIGHT -> w

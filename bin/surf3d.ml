@@ -15,9 +15,10 @@ let set_wire po wire =
   | Grid ((fm, v3, _), _) -> Grid ((fm, v3, wire), Internal.gllist_empty ())
   | _ -> raise Not_found
 
-let t = text "Press CTRL-L to toggle lighting" 0.3 0.1;;
+let t1 = text "Press CTRL-L to toggle lighting" 0.3 0.3
+let t2 = text "Use the mouse to rotate the scene" 0.3 0.1;;
 
-display [ set_wire s false; t ];;
+display [ set_wire s false; Color red; t1; t2 ];;
 display [ Color cyan; set_wire s true; Color red; a ] ~dev:gl
 
 let fx u v =
