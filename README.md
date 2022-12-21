@@ -50,5 +50,7 @@ instance install the `texlive` system package.
 opam install gsl
 ```
 
-* For rendering via the OCaml Graphics library, you need the
-`oplot-graphics` opam package.
+* For rendering via the OCaml Graphics library (currently not
+recommended), you need to use the
+[`oplot-graphics`](https://github.com/sanette/oplot-graphics) opam
+package.
