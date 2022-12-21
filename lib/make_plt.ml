@@ -295,10 +295,10 @@ module type S = sig
 
   (* val draw_points : points -> ?dev:plot_device -> ?dep:int -> view option -> unit *)
 
-  module Internal : sig
-    (** {1 Oplot internals}
+  (** {2 Oplot internals} *)
 
-        Oplot internal functions are useful for creating user interfaces. *)
+  module Internal : sig
+    (** Oplot internal functions are useful for creating user interfaces. *)
 
     val reset_time : ?t0:int -> unit -> unit
     val has_anim : plot_object -> bool
