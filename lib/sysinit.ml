@@ -185,10 +185,13 @@ let fig2ps =
   if has_exe "fig2ps" then "fig2ps"
   else
     let local = oplot_dir // "fig2eps" in
-    if Sys.file_exists local then begin
-      if (Unix.stat local).st_perm <> 0o755 then Unix.chmod local 0o755;
+    if Sys.file_exists local then
+      let () =
+        if (Unix.stat local).st_perm <> 0o755 then
+          try Unix.chmod local 0o755
+          with _ -> Debug.print "Cannot make %s executable" local
+      in
       local
-    end
     else begin
       print_endline
         "WARNING: fig2ps not found. You will not be able to export to ps or \
