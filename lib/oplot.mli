@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version %%VERSION%%
+    @version 0.7.0
     @author San Vũ Ngọc *)
 
 (** {1 Example}
