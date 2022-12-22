@@ -34,7 +34,7 @@ let oplot_dir =
       Debug.print "Executable: %s" (basename exe);
       Debug.print "Directory: %s" (basename (dirname exe));
       match (basename exe, basename (dirname exe)) with
-      | "goplot", "bin" (* = cas où la librairie est utilisée par goplot *) ->
+      | "goplot", "bin" (* = cas oÃ¹ la librairie est utilisÃ©e par goplot *) ->
           dirname (dirname exe) // "share/goplot"
       | "goplot.exe", "gui"
       (* = lancement par dune exec gui/goplot.exe *)
@@ -46,7 +46,7 @@ let oplot_dir =
 
 let first_time = ref true
 
-(* répertoire perso. Inutilisé pour le moment *)
+(* rÃ©pertoire perso. InutilisÃ© pour le moment *)
 let home_dir =
   let home = try Sys.getenv "HOME" with Not_found -> "." in
   let home_dir_name = home // ".oplot" in
@@ -54,13 +54,17 @@ let home_dir =
     if (Unix.stat home_dir_name).Unix.st_kind = Unix.S_DIR then (
       first_time := false;
       home_dir_name)
-    else "./" (* then we use the current dir *)
+    else "." (* then we use the current dir *)
   else (
     print_endline ("Creating personal oplot directory in " ^ home_dir_name);
-    Unix.mkdir home_dir_name 0o755;
-    home_dir_name)
+    try
+      Unix.mkdir home_dir_name 0o755;
+      home_dir_name
+    with _ ->
+      print_endline ("Error creating " ^ home_dir_name);
+      ".")
 
-(* répertoire temporaire *)
+(* rÃ©pertoire temporaire *)
 let init_tmp_dir var =
   let tmp = Filename.temp_file "oplot" "" in
   Sys.remove tmp;
@@ -99,7 +103,7 @@ let init_font_path ?(fontname = "FreeSans.ttf") var =
 let font_path = ref ""
 let () = init_font_path ~fontname:"DejaVuSans.ttf" font_path
 (* FreeSans.ttf est beaucoup plus proche du Helvetica de xfig, et donc de la
-   sortie postscript. Mais le "hinting" (rendu à l'écran en petite taille) est
+   sortie postscript. Mais le "hinting" (rendu Ã  l'Ã©cran en petite taille) est
    nettement meilleur avec DejaVuSans... *)
 
 let current_font_size = ref 12
@@ -123,13 +127,13 @@ let fig_color_counter = ref 32
 let latex_header = oplot_dir // "header.tex"
 let eps_output_file = !tmp_dir // "oplot.eps"
 let pdf_output_file = !tmp_dir // "oplot.pdf"
-(* doit être le même que xfig_output_file, avec extension eps (pour
-   fig2eps). L'implémenter directement ainsi ? *)
+(* doit Ãªtre le mÃªme que xfig_output_file, avec extension eps (pour
+   fig2eps). L'implÃ©menter directement ainsi ? *)
 
 let latex_tmp = "oplot-tmp.tex"
 let png_output = "oplot.png"
 
-(* deux précautions valent mieux qu'une pour éviter de détruire d'importe
+(* deux prÃ©cautions valent mieux qu'une pour Ã©viter de dÃ©truire d'importe
    quoi... *)
 let remove_tmp_dir () =
   let filelist =
@@ -166,10 +170,10 @@ let shell command =
   in
   Printf.kprintf exec command
 
-(* vérifie si gs est compilé avec le device "pngalpha" *)
+(* vÃ©rifie si gs est compilÃ© avec le device "pngalpha" *)
 let pngalpha () = Sys.command "gs --help | grep pngalpha > /dev/null" = 0
 
-(* vérifie la présence d'un exécutable *)
+(* vÃ©rifie la prÃ©sence d'un exÃ©cutable *)
 let has_exe name = Sys.command (Printf.sprintf "which %s" name) = 0
 let has_latex = has_exe "latex"
 let has_gs = has_exe "gs"
@@ -195,18 +199,18 @@ let fig2ps =
 let fig2eps = fig2ps ^ " --eps --noforcespecial --nogv"
 let fig2pdf = fig2ps ^ " --pdf --noforcespecial --nogv"
 
-(* vérifie la présence d'au moins un exécutable dans une liste. Renvoie le
-   premier trouvé (option)*)
+(* vÃ©rifie la prÃ©sence d'au moins un exÃ©cutable dans une liste. Renvoie le
+   premier trouvÃ© (option)*)
 let exe_from_list list =
   let rec loop l =
     match l with [] -> None | v :: ll -> if has_exe v then Some v else loop ll
   in
   loop list
 
-(* cherche un programme pour voir des images. None si rien trouvé *)
+(* cherche un programme pour voir des images. None si rien trouvÃ© *)
 let viewer =
   exe_from_list [ "kuickshow"; "gwenview"; "eog"; "display"; "gimp"; "Gimp" ]
 
-(* cherche un programme pour voir du postscript. None si rien trouvé *)
+(* cherche un programme pour voir du postscript. None si rien trouvÃ© *)
 let psviewer = exe_from_list [ "okular"; "evince"; "gv"; "kghostview" ]
 let first_time () = !first_time
