@@ -84,7 +84,7 @@ module type S = sig
     float ->
     plot_object
   (** [parametric_plot fx fy t0 t1] computes a parametric curve given by the
-      points ([fx](t), [fy](t)), for t varyingn from [t0] to [t1]. If [adapt] is
+      points ([fx](t), [fy](t)), for t varying from [t0] to [t1]. If [adapt] is
       true, the step will adapt to the arc-length of the curve. *)
 
   val point_plot_f :

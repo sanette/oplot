@@ -305,14 +305,14 @@ let init () =
   let dpi =
     match get_dpi () with
     | Some x ->
-        pr "Detected DPI=%u\n" x;
+        Debug.print "Detected DPI=%u\n" x;
         x
     | None ->
-        pr "Cannot get monitor's DPI. Using %u." default_dpi;
+        Debug.print "Cannot get monitor's DPI. Using %u." default_dpi;
         default_dpi
   in
   let s = if dpi <= 110 then 1. else float dpi /. 110. in
-  pr "Using SCALE=%f\n" s;
+  Debug.print "Using SCALE=%f\n" s;
   gl_scale := s;
   window_open := false;
   fullscreen := false;

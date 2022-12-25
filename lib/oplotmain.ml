@@ -20,6 +20,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let go = Debug.go
   let do_option o f = match o with Some x -> f x | None -> ()
+  let default o v = match o with Some x -> x | None -> v
   let force_refresh = ref false
   let xfig_scale = 45.
   (* Un point xfig vaut 1/80 inch. Mais attention "When exporting to EPS,
@@ -70,7 +71,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         fwindow_height := float !window_height;
         scaled := true
       end
-      else print_endline "Already scaled."
+      else Debug.print "Already scaled."
 
   (* initialisation d'une fenêtre opengl par SDL *)
   let win = ref None
@@ -2250,8 +2251,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* http://linux.math.tifr.res.in/manuals/html/xfig/fig-format.html *)
   let xfig_init () =
     init_fig_colors ();
-    xfig_main_channel := open_out (Printf.sprintf "%s.main" xfig_output_file);
-    xfig_head_channel := open_out (Printf.sprintf "%s.head" xfig_output_file);
+    xfig_main_channel := open_out (Printf.sprintf "%s.main" xfig_output_tmp);
+    xfig_head_channel := open_out (Printf.sprintf "%s.head" xfig_output_tmp);
     output_string !xfig_head_channel
       "#FIG 3.2  Produced by oplot.ml, Vu Ngoc San\n";
     output_string !xfig_head_channel
@@ -2294,8 +2295,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     close_out !xfig_head_channel;
     shell "cat %s.head %s.main > %s"
       (* a modifier pour portabilité *)
-      xfig_output_file xfig_output_file xfig_output_file;
-    shell "rm %s.head %s.main" xfig_output_file xfig_output_file
+      xfig_output_tmp xfig_output_tmp xfig_output_tmp;
+    shell "rm %s.head %s.main" xfig_output_tmp xfig_output_tmp
 
   let rec sh_has_latex sh =
     match sh with
@@ -2311,12 +2312,12 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let output =
       match output with
       | Some s -> s
-      | None -> if pdf then pdf_output_file else eps_output_file
+      | None -> if pdf then pdf_output else eps_output
     in
     if sh_has_latex sh then (
-      shell "%s --input=%s %s" convert latex_header xfig_output_file;
+      shell "%s --input=%s %s" convert latex_header xfig_output_tmp;
       shell "cp %s.%s %s"
-        (Filename.remove_extension xfig_output_file)
+        (Filename.remove_extension xfig_output_tmp)
         (if pdf then "pdf" else "eps")
         output;
       (* attention xfig ecrit les caractères non ascii sous la forme \xxx; il
@@ -2333,7 +2334,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     else
       shell "fig2dev -L %s -F %s %s"
         (if pdf then "pdf" else "eps")
-        xfig_output_file output;
+        xfig_output_tmp output;
     Printf.sprintf "Output file: %s" output |> print_endline
 
   (* ne traite pas les pauses pour le moment... à intégrer à mainloop ?
@@ -2405,7 +2406,11 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     match dev with
     | X11_d -> disp (Sheet sh) ~dev:X11
     | GL_d -> disp (Sheet sh) ~dev:GL ~fscreen
-    | FIG_d -> disp (Sheet sh) ~dev:FIG
+    | FIG_d ->
+        disp (Sheet sh) ~dev:FIG;
+        let output = default output fig_output in
+        shell "cp %s %s" xfig_output_tmp output;
+        Printf.sprintf "Output file: %s" output |> print_endline
     | EPS_d ->
         disp (Sheet sh) ~dev:FIG;
         write_eps ?output ~pdf:false (Sheet sh)
@@ -2414,18 +2419,17 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         write_eps ?output ~pdf:true (Sheet sh)
     | XFIG_d ->
         disp (Sheet sh) ~dev:FIG;
-        shell "xfig -correct_font_size -zoom 1 %s &" xfig_output_file
+        shell "xfig -correct_font_size -zoom 1 %s &" xfig_output_tmp
     | GV_d -> (
         disp (Sheet sh) ~dev:FIG;
-        write_eps ~pdf:false (Sheet sh);
+        write_eps ~pdf:false ~output:eps_output_tmp (Sheet sh);
         match psviewer with
-        | Some "gv" -> shell "gv --media=BBox --watch %s &" eps_output_file
-        | Some "kghostview" ->
-            shell "kghostview --portrait %s &" eps_output_file
-        | Some prog -> shell "%s %s &" prog eps_output_file
+        | Some "gv" -> shell "gv --media=BBox --watch %s &" eps_output_tmp
+        | Some "kghostview" -> shell "kghostview --portrait %s &" eps_output_tmp
+        | Some prog -> shell "%s %s &" prog eps_output_tmp
         | None -> print_endline "No postscript viewer found.")
     | BMP_d ->
-        print_endline "using PNG instead of BMP.";
+        print_endline "Using PNG instead of BMP.";
         write_bmp ?output (Sheet sh)
     | PNG_d -> write_bmp ?output (Sheet sh)
     | IMG_d -> (
@@ -2439,7 +2443,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let display_eps sh =
     disp (Sheet sh) ~dev:FIG;
     write_eps (Sheet sh);
-    shell "gv --watch --scalebase=2 %s&" eps_output_file
+    shell "gv --watch --scalebase=2 %s&" eps_output_tmp
 
   (**************************)
   let interrupt () =
@@ -2482,6 +2486,6 @@ end
 
 (*
    Local Variables:
-   compile-command:"cd ..;dune build"
+   compile-command:"cd ..; dune build"
    End:
 *)

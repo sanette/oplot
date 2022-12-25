@@ -56,7 +56,7 @@ let home_dir =
       home_dir_name)
     else "." (* then we use the current dir *)
   else (
-    print_endline ("Creating personal oplot directory in " ^ home_dir_name);
+    Debug.print "Creating personal oplot directory in %s" home_dir_name;
     try
       Unix.mkdir home_dir_name 0o755;
       home_dir_name
@@ -69,7 +69,7 @@ let init_tmp_dir var =
   let tmp = Filename.temp_file "oplot" "" in
   Sys.remove tmp;
   Unix.mkdir tmp 0o755;
-  print_endline ("Creating temp dir in " ^ tmp);
+  Debug.print "Creating temp dir in %s" tmp;
   var := tmp
 
 let tmp_dir = ref ""
@@ -113,7 +113,7 @@ let current_font = ref (Sdlttf.open_font !font_path !current_font_size |> go)
 (* device ghostscript: verifier qu'on a bien pngalpha avec *)
 (* gs -h. Sinon mettre autre chose ? png??? *)
 
-let xfig_output_file = !tmp_dir // "oplot.fig"
+let xfig_output_tmp = !tmp_dir // "oplot.fig"
 
 (* any other way ??: *)
 let xfig_main_channel = ref (open_out (!tmp_dir // ".dummy.main"))
@@ -125,17 +125,21 @@ let xfig_head_channel = ref (open_out (!tmp_dir // ".dummy.head"))
 let () = close_out !xfig_head_channel
 let fig_color_counter = ref 32
 let latex_header = oplot_dir // "header.tex"
-let eps_output_file = !tmp_dir // "oplot.eps"
-let pdf_output_file = !tmp_dir // "oplot.pdf"
-(* doit être le même que xfig_output_file, avec extension eps (pour
+let eps_output_tmp = !tmp_dir // "oplot.eps"
+let pdf_output_tmp = !tmp_dir // "oplot.pdf"
+(* doit être le même que xfig_output_tmp, avec extension eps (pour
    fig2eps). L'implémenter directement ainsi ? *)
 
 let latex_tmp = "oplot-tmp.tex"
 let png_output = "oplot.png"
+let pdf_output = "oplot.pdf"
+let eps_output = "oplot.eps"
+let fig_output = "oplot.fig"
 
 (* deux précautions valent mieux qu'une pour éviter de détruire d'importe
    quoi... *)
 let remove_tmp_dir () =
+  Debug.print "Cleaning tmp directory: %s" !tmp_dir;
   let filelist =
     [
       "oplot.png";
@@ -174,7 +178,12 @@ let shell command =
 let pngalpha () = Sys.command "gs --help | grep pngalpha > /dev/null" = 0
 
 (* vérifie la présence d'un exécutable *)
-let has_exe name = Sys.command (Printf.sprintf "which %s" name) = 0
+let has_exe name =
+  Sys.command
+    (Printf.sprintf "which %s%s" name
+       (if Debug.debug then "" else " > /dev/null"))
+  = 0
+
 let has_latex = has_exe "latex"
 let has_gs = has_exe "gs"
 let has_xfig = has_exe "xfig"

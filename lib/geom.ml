@@ -37,9 +37,7 @@ let inter_segments (p1, p2) (q1, q2) =
       cramer (* intersection des droites directrices *)
         (p2.y -. p1.y) (p1.x -. p2.x) (det p1.x p2.x p1.y p2.y) (q2.y -. q1.y)
         (q1.x -. q2.x) (det q1.x q2.x q1.y q2.y)
-    with _ ->
-      print_endline "Bof";
-      raise Empty_Intersection
+    with _ -> raise Empty_Intersection
   in
   let p = { x; y } in
   if in_segment p (p1, p2) && in_segment p (q1, q2) then p
