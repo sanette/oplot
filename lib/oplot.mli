@@ -83,10 +83,10 @@ module Points = Points
     This module contains all plotting functions. *)
 
 module Plt : sig
-(** Main Oplot functions
-
-    This module contains all functions for defining and rendering plots. *)
   open Points
+  (** Main Oplot functions
+
+      This module contains all functions for defining and rendering plots. *)
 
   type plot_device = X11 | GL | FIG
   type view = point * point
@@ -163,11 +163,11 @@ module Plt : sig
       ([x0],[y0]).
 
       Example:
-      {@ocaml env=EXAMPLE [
-      # let a = axis 0. 0.;;
-      # display [ a ];;
-      ]}
-  *)
+
+      {@ocaml env=EXAMPLE[
+        # let a = axis 0. 0.;;
+        # display [ a ];;
+      ]} *)
 
   val parametric_plot :
     (float -> float) ->
