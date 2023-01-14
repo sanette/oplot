@@ -1,3 +1,8 @@
+# 0.71 -- 2022/01/09
+
+* back to old version scheme. Opam was confused!
+* fix filename for PDF export
+
 # 0.7 -- 2022/12/22 -- (breaking change) remove Graphics dependency
 
 * Graphics is now optional. Use the `oplot-graphics` package to restore it.
@@ -17,6 +22,6 @@ Better Mac OS support:
 Drop the dependency on the old SDL12 library (and hence ocamlsdl),
 switch to `tsdl`, `tsdl-image`, `tsdl-ttf`.
 
-# 0.5 -- last version with SDL12
+# 0.50 -- last version with SDL12
 
 # 0.1, 0.2, 0.3, 0.4 -- 2007 (yes, that's old)
