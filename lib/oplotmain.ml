@@ -121,7 +121,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let sdl_init ~show () =
     let crucial () =
       if Sdl.Init.test (Sdl.was_init None) Sdl.Init.video then
-        Debug.print "Using existing SDL context." (* Sdl.quit () *)
+        Debug.print "Using existing SDL context."
       else begin
         Debug.print "Raising up SDL...";
         Sdl.init Sdl.Init.(timer + video + events) |> go;
@@ -223,7 +223,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     Gl.enable `blend;
 
     (* Gl.enable `point_smooth; *)
-    (*peut causer d'énormes ralentissements sur certaines implémentations !! *)
+    (* Peut causer d'énormes ralentissements sur certaines implémentations !! *)
     GlFunc.blend_func ~src:`src_alpha ~dst:`one_minus_src_alpha;
     GlDraw.line_width !gl_scale;
     GlDraw.point_size !gl_scale;
@@ -304,7 +304,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   exception Feedback_Buffer_Overflow
 
   (* faire un  gl_init (); avant, et un close() ~dev:GL; après...  *)
-  (* draw_proc est un procédure qui lance les tracés opengl. *)
+  (* draw_proc est une procédure qui lance les tracés opengl. *)
   (* retourne le buffer de feedback et le nombre d'éléments. *)
   let feedback_render draw_proc =
     (* on augmente progressivement la taille du buffer en 2^i si nécessaire...
@@ -1843,8 +1843,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let sdl_mouse_close () =
     (* print_endline "up button"; *)
-    (* Sdl.set_event_state Sdl.Event.mouse_motion Sdl.disable; *)
-    (* Sdl.set_event_state Sdl.Event.mouse_button_up Sdl.disable; *)
+    Sdl.set_event_state Sdl.Event.mouse_motion Sdl.disable;
+    Sdl.set_event_state Sdl.Event.mouse_button_up Sdl.disable;
     ()
 
   let sdl_mouse_action _mouse =
@@ -1856,8 +1856,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let sdl_mouse_init mouse =
     (* print_endline "down_button"; *)
     if Sdl.Event.(get mouse mouse_button_button) = Sdl.Button.left then begin
-      (* Sdl.set_event_state Sdl.Event.mouse_motion Sdl.enable; *)
-      (* Sdl.set_event_state Sdl.Event.mouse_button_up Sdl.enable; *)
+      Sdl.set_event_state Sdl.Event.mouse_motion Sdl.enable;
+      Sdl.set_event_state Sdl.Event.mouse_button_up Sdl.enable;
       let x, y =
         Sdl.Event.(get mouse mouse_button_x, get mouse mouse_button_y)
       in
@@ -1930,14 +1930,14 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let init_time = time () in
     let e = Sdl.Event.create () in
     let has_event = ref false in
-    (* Sdl.set_event_state Sdl.Event.window_event Sdl.disable; *)
+    Sdl.set_event_state Sdl.Event.window_event Sdl.disable;
     do_option !win Sdl.gl_swap_window;
     while (not !has_event) && (t = 0 || time () - init_time < t) do
       has_event := Sdl.poll_event (Some e);
       Sdl.delay (Int32.of_int !frame_length)
     done;
     time_delay := !time_delay + time () - init_time;
-    (* Sdl.set_event_state Sdl.Event.window_event Sdl.enable; *)
+    Sdl.set_event_state Sdl.Event.window_event Sdl.enable;
     if !has_event && Sdl.Event.(get e typ) = Sdl.Event.key_down then
       match Sdl.Event.(get e keyboard_keycode) with
       | k when k = Sdl.K.escape || k = Sdl.K.q -> Sdl.push_event e |> ignore
@@ -2384,6 +2384,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
             reset_time ();
             GlClear.clear [ `color; `depth ];
             do_option !win Sdl.gl_swap_window;
+            sdl_mouse_close ();
             sdl_mainloop sh wait
         | GTK ->
             (* ne pas utiliser comme ca...*)
