@@ -196,7 +196,7 @@ module Plt : sig
   val adapt_plot :
     (float -> float) -> ?pas:float -> float -> float -> plot_object
   (** Similar to {!line_plot_f}, but the plot will be dynamically cropped to the
-      current {!type-Common.view} object. It returns an {!Common.Adapt} object. *)
+      current {!type-view} object. It returns an {!Adapt} object. *)
 
   val anim_plot :
     (float -> float -> float) ->
@@ -208,7 +208,7 @@ module Plt : sig
     plot_object
   (** If [f] is a function two parameters [t] and [x], then [anim_plot f x0 x1]
       will generate an animation of the graph of the functions [f t] for [t]
-      evolving with real time. The resulting object is of type {!Common.User}. *)
+      evolving with real time. The resulting object is of type {!User}. *)
 
   val dot_plot :
     ?dot:(float -> float -> plot_object) ->
@@ -240,7 +240,7 @@ module Plt : sig
       compilation of the given string. *)
 
   val view : float -> float -> float -> float -> plot_object
-  (** [view x0 y0 x1 y1] creates a {!Common.View} object indicating the bounding
+  (** [view x0 y0 x1 y1] creates a {!View} object indicating the bounding
       box for subsequent drawings. *)
 
   (** {3 3D objects}
@@ -285,10 +285,10 @@ module Plt : sig
   (** Specifies the RGB color for subsequent drawings. *)
 
   val freeze : int -> plot_object
-  (** [freeze t] creates a {!Common.Freeze} for [t] ms. *)
+  (** [freeze t] creates a {!Freeze} for [t] ms. *)
 
   val pause : int -> plot_object
-  (** [pause t] creates a {!Common.Pause} for [t] ms. *)
+  (** [pause t] creates a {!Pause} for [t] ms. *)
 
   val rotate : float -> float -> float -> float -> float -> plot_object
   (** [rotate x y z theta t] rotates the 3D scene with angular velocity [theta]
@@ -362,7 +362,7 @@ module Plt : sig
 
       These functions should not be used interactively, because they necessitate
       the graphics window to be already opened by {!display}; but they can be
-      interesting when programming a {!Common.User} object. *)
+      interesting when programming a {!User} object. *)
 
   val set_color : ?dev:plot_device -> color -> unit
 
@@ -374,7 +374,7 @@ module Plt : sig
       If [addcounter] is true (default) the object will be considered as a new
       element of the currently displayed sheet; otherwise, it will be considered
       as being part of the currently displayed object: this only affects the
-      {!Common.Pause} mechanism. *)
+      {!Pause} mechanism. *)
 
   val elapsed : unit -> int
   (** Time elapsed from the openning of the opengl window. *)
