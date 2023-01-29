@@ -69,14 +69,11 @@ let position3d = ref default_position3d
 (* coeff multiplicatif *)
 let default_zoom3d = 1.
 let zoom3d = ref default_zoom3d
-
 let mouse_x = ref 0
 let mouse_y = ref 0
-
 let frame_length = ref (1000 / 29) (* 29 FPS *)
 let get_frame_length () = !frame_length
 let set_frame_length x = frame_length := x
-
 let start_time = ref 0
 
 (* utilisé pour réguler l'affichage dans les boucles principales *)
