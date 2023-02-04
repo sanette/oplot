@@ -423,18 +423,17 @@ let zoom z z0 t0 t1 =
   Move3d
     { move = Zoom (z, z0); time = { min = t0; max = t1 }; init_time = None }
 
-
 (**********)
 
 let rec get_points2 = function
   | Points points -> points
   | Lines points -> List.flatten points
   | Poly points -> points
-  | View (Some (p1, p2)) -> [p1; p2]
+  | View (Some (p1, p2)) -> [ p1; p2 ]
   | View None -> []
-  | Axis a -> [a.center]
+  | Axis a -> [ a.center ]
   | Color _ -> []
-  | Text t -> [t.pos]
+  | Text t -> [ t.pos ]
   | Matrix _ -> [] (* ou retourner les centres des cases ? *)
   | Grid _ -> []
   | Surf3d _ -> []
@@ -443,8 +442,6 @@ let rec get_points2 = function
   | Pause _ -> []
   | Freeze _ -> []
   | Clear _ -> []
-  | Adapt (a, _) -> (match !a with
-    | (_, Some p) -> get_points2 p
-    | _ -> [])
+  | Adapt (a, _) -> ( match !a with _, Some p -> get_points2 p | _ -> [])
   | User _ -> []
   | Sheet _ -> []

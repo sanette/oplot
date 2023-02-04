@@ -297,7 +297,7 @@ module Plt : sig
   (** {3 Retrieving data from plot objects} *)
 
   val get_points2 : plot_object -> points
-    (** Obtain the list of 2D points, when relevant. *)
+  (** Obtain the list of 2D points, when relevant. *)
 
   (** {2 Displaying the plot objects}
 
