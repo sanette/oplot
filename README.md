@@ -2,6 +2,7 @@
 
 Mathematical plotting library for ocaml
 
+| Gamma function |  3D surface |
 |-----|-----|
 |![gamma](docs/oplot/Oplot/gamma.png)| ![surf3d](docs/oplot/Oplot/surf3d.png) |
 
