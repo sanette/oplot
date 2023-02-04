@@ -12,7 +12,7 @@ display [ Color red; p; Color black; a ]</code></pre><p>This will open a window 
     let p =
       line_plot_f
         (fun x -&gt; sin (x +. (float_of_int i /. 50.)))
-        0. 20. ~pas:0.05
+        0. 20. ~step:0.05
     in
     let c =
       color (float_of_int i /. 50.) (1. -. (float_of_int i /. 50.)) 0.
