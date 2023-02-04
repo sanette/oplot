@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - if: ${{ contains(matrix.host_os, 'ubuntu') }}
+      - if: ${{ contains(matrix.os, 'ubuntu') }}
         run: sudo apt-get update -y
 
       - name: Checkout code

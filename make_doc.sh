@@ -4,6 +4,7 @@ dune build @doc
 rsync -avz --delete _build/default/_doc/_html/ docs
 for file in $(find docs/ -name index.html)
 do
+    echo $file
     # UTF8 right arrow
     sed -i 's|<span class="arrow">&#45;&gt;</span>|<span class="arrow">→</span>|g' $file
     sed -i 's|val</span>\([^:]*\) :|val</span><span class="val">\1</span> :|g' $file

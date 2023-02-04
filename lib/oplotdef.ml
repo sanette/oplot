@@ -103,14 +103,14 @@ let view2of3 (p1, p2) =
 
 (* Retourne la liste des points à tracer, avec un pas optionnel (par défaut le
    pas est ajusté pour !window_width points). Le dernier argument () est
-   nécessaire pour permettre à "pas" d'être optionnel.  Un élément de cette
+   nécessaire pour permettre à "step" d'être optionnel.  Un élément de cette
    liste est du type (x0,y0): *)
 
 (* rem: la liste commence par l'abscisse la plus grande x1 *)
-let point_list f x0 x1 ?(pas = (x1 -. x0) /. !fwindow_width) () =
+let point_list f x0 x1 ?(step = (x1 -. x0) /. !fwindow_width) () =
   let rec loop l x =
     if x > x1 then l (* modifier si on veut x1 < x0 !! *)
-    else loop ({ Point2.x; y = f x } :: l) (x +. pas)
+    else loop ({ Point2.x; y = f x } :: l) (x +. step)
   in
   loop [] x0
 
@@ -126,18 +126,18 @@ let poly_of_list pl = Poly pl (*utile ?*)
 
    mais ca oblige l'utilisateur a mettre le () à la fin... un peu penible, quoi
 *)
-let point_plot_f f ?pas x0 x1 =
+let point_plot_f f ?step x0 x1 =
   let p =
-    match pas with None -> (x1 -. x0) /. !fwindow_width | Some pp -> pp
+    match step with None -> (x1 -. x0) /. !fwindow_width | Some pp -> pp
   in
-  points_of_list (point_list f x0 x1 ~pas:p ())
+  points_of_list (point_list f x0 x1 ~step:p ())
 
 (*** interactif: crée un objet Lines à partir d'une fonction ***)
-let line_plot_f f ?pas x0 x1 =
+let line_plot_f f ?step x0 x1 =
   let p =
-    match pas with None -> (x1 -. x0) /. !fwindow_width | Some pp -> pp
+    match step with None -> (x1 -. x0) /. !fwindow_width | Some pp -> pp
   in
-  lines_of_list (point_list f x0 x1 ~pas:p ())
+  lines_of_list (point_list f x0 x1 ~step:p ())
 
 let plot = line_plot_f
 
@@ -202,8 +202,8 @@ let lines_crop lines v =
   loop lines None [] []
 
 (* crée un objet Adapt pour un graphe de fonction *)
-let adapt_plot f ?pas x0 x1 =
-  let list = point_list f ?pas x0 x1 () in
+let adapt_plot f ?step x0 x1 =
+  let list = point_list f ?step x0 x1 () in
   (* adapter aussi le pas ? *)
   Adapt
     ( ref (None, None),
@@ -213,17 +213,17 @@ let adapt_plot f ?pas x0 x1 =
         | Some v -> Lines (lines_crop list v) )
 
 (* ici t0 peut être plus grand que t1 si on veut ! *)
-let parametric_list fx fy t0 t1 pas =
+let parametric_list fx fy t0 t1 step =
   let rec loop list t =
-    if abs_float (t +. pas -. t0) > abs_float (t1 -. t0) then
+    if abs_float (t +. step -. t0) > abs_float (t1 -. t0) then
       { Point2.x = fx t1; y = fy t1 } :: list
-    else loop ({ Point2.x = fx t; y = fy t } :: list) (t +. pas)
+    else loop ({ Point2.x = fx t; y = fy t } :: list) (t +. step)
   in
   loop [] t0
 
-let parametric_plot fx fy ?pas ?(adapt = true) t0 t1 =
+let parametric_plot fx fy ?step ?(adapt = true) t0 t1 =
   let p =
-    match pas with
+    match step with
     | None ->
         (t1 -. t0)
         /. min
@@ -422,3 +422,29 @@ let rotate x y z th t =
 let zoom z z0 t0 t1 =
   Move3d
     { move = Zoom (z, z0); time = { min = t0; max = t1 }; init_time = None }
+
+
+(**********)
+
+let rec get_points2 = function
+  | Points points -> points
+  | Lines points -> List.flatten points
+  | Poly points -> points
+  | View (Some (p1, p2)) -> [p1; p2]
+  | View None -> []
+  | Axis a -> [a.center]
+  | Color _ -> []
+  | Text t -> [t.pos]
+  | Matrix _ -> [] (* ou retourner les centres des cases ? *)
+  | Grid _ -> []
+  | Surf3d _ -> []
+  | Curve3d _ -> []
+  | Move3d _ -> []
+  | Pause _ -> []
+  | Freeze _ -> []
+  | Clear _ -> []
+  | Adapt (a, _) -> (match !a with
+    | (_, Some p) -> get_points2 p
+    | _ -> [])
+  | User _ -> []
+  | Sheet _ -> []

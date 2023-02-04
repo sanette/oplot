@@ -2044,13 +2044,13 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         raise (Invalid_argument "object_plot cannot accept Sheet argument")
 
   (* use t as a realtime parameter, in seconds *)
-  let anim_plot f ?pas ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
+  let anim_plot f ?step ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
     let userfu v dev =
       let t =
         if t1 = 0. then t0 +. (float (time () - !initial_time) /. 1000.)
         else fmin t1 (t0 +. (float (time () - !initial_time) /. 1000.))
       in
-      let p = plot (f t) ?pas x0 x1 in
+      let p = plot (f t) ?step x0 x1 in
       object_plot p (Some v) ~dev
     in
     User userfu

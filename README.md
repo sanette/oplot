@@ -2,6 +2,9 @@
 
 Mathematical plotting library for ocaml
 
+|-----|-----|
+|![gamma](docs/oplot/Oplot/gamma.png)| ![surf3d](docs/oplot/Oplot/surf3d.png) |
+
 + 2D plots
   + function `y = f(x)`
   + parametric curves
@@ -26,7 +29,7 @@ Mathematical plotting library for ocaml
 
 ## Documentation
 
-[API documentation](https://sanette.github.io/oplot/oplot/Oplot/index.html).
+[Examples and API documentation](https://sanette.github.io/oplot/oplot/Oplot/index.html).
 
 ## GUI
 

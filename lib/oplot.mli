@@ -51,7 +51,7 @@
           let p =
             line_plot_f
               (fun x -> sin (x +. (float_of_int i /. 50.)))
-              0. 20. ~pas:0.05
+              0. 20. ~step:0.05
           in
           let c =
             color (float_of_int i /. 50.) (1. -. (float_of_int i /. 50.)) 0.
@@ -172,7 +172,7 @@ module Plt : sig
   val parametric_plot :
     (float -> float) ->
     (float -> float) ->
-    ?pas:float ->
+    ?step:float ->
     ?adapt:bool ->
     float ->
     float ->
@@ -182,25 +182,25 @@ module Plt : sig
       true, the step will adapt to the arc-length of the curve. *)
 
   val point_plot_f :
-    (float -> float) -> ?pas:float -> float -> float -> plot_object
+    (float -> float) -> ?step:float -> float -> float -> plot_object
   (** [point_plot_f f x0 x1] computes a subset of the graph of the function [f]
       obtained by isolated points with a fixed horizontal step. *)
 
   val line_plot_f :
-    (float -> float) -> ?pas:float -> float -> float -> plot_object
+    (float -> float) -> ?step:float -> float -> float -> plot_object
   (** Similar to {!point_plot_f} but the points are joined by line segments. *)
 
-  val plot : (float -> float) -> ?pas:float -> float -> float -> plot_object
+  val plot : (float -> float) -> ?step:float -> float -> float -> plot_object
   (** Alias for {!line_plot_f}. *)
 
   val adapt_plot :
-    (float -> float) -> ?pas:float -> float -> float -> plot_object
+    (float -> float) -> ?step:float -> float -> float -> plot_object
   (** Similar to {!line_plot_f}, but the plot will be dynamically cropped to the
       current {!type-view} object. It returns an {!Adapt} object. *)
 
   val anim_plot :
     (float -> float -> float) ->
-    ?pas:float ->
+    ?step:float ->
     ?t0:float ->
     ?t1:float ->
     float ->
@@ -282,7 +282,7 @@ module Plt : sig
   (** {3 Other objects} *)
 
   val color : float -> float -> float -> plot_object
-  (** Specifies the RGB color for subsequent drawings. *)
+  (** Specify the RGB color for subsequent drawings. *)
 
   val freeze : int -> plot_object
   (** [freeze t] creates a {!Freeze} for [t] ms. *)
@@ -293,6 +293,11 @@ module Plt : sig
   val rotate : float -> float -> float -> float -> float -> plot_object
   (** [rotate x y z theta t] rotates the 3D scene with angular velocity [theta]
       (in radians) aroung the axis ([x],[y],[z]), during time [t]. *)
+
+  (** {3 Retrieving data from plot objects} *)
+
+  val get_points2 : plot_object -> points
+    (** Obtain the list of 2D points, when relevant. *)
 
   (** {2 Displaying the plot objects}
 
