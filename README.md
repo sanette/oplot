@@ -49,7 +49,6 @@ toplevel. See the [README](top/README.md) file.
 ```
 opam pin add https://github.com/sanette/lablgl-lib.git
 opam install lablgl.1.07-lib
-
 ```
 
 * For PDF output you need to install the `fig2dev` system package.
