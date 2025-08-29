@@ -17,7 +17,7 @@ type view3 = point3 * point3
 type points = point list
 type align = CENTER | LEFT | RIGHT
 type text_flag = Normal | Latex
-type text_image = ([ `luminance_alpha ], [ `ubyte ]) GlPix.t * int * int
+type text_image = ([ `rgba ], [ `ubyte ]) GlPix.t * int * int
 
 (* (image + dimensions de la partie intéressante) *)
 type text = {

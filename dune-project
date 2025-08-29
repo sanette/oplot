@@ -13,6 +13,7 @@
  (description "High-quality plotting of 2D usual mathematical functions, including animations and LaTeX formulas. Supports also 3D surfaces with interactive rotating.")
  (tags ("plot" "2D" "3D" "math"))
  (depends
+  graphics
   (tsdl-image (>= 0.3.0))
   (tsdl-ttf (>= 0.3))
   (tsdl (>= 0.9.6))

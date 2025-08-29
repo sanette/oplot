@@ -15,7 +15,7 @@ type view3 = point3 * point3
 (* gérer aussi la couleur comme les view ou attachée à chaque objet ? *)
 
 type color = { r : float; g : float; b : float }
-type text_image = ([ `luminance_alpha ], [ `ubyte ]) GlPix.t * int * int
+type text_image = ([ `rgba ], [ `ubyte ]) GlPix.t * int * int
 (* (image + dimensions de la partie intéressante) *)
 
 type align = CENTER | LEFT | RIGHT

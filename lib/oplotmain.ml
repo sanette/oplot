@@ -832,25 +832,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let rec pot n i = if i >= n then i else pot n (i lsl 1) in
     pot n 1
 
-  (* renvoie une texture opengl contenant le message affiché avec la
-     fonte FreeSans ou avec LaTeX, ainsi que les dimensions du texte *)
-  (* would be cool to have instead a vectorial drawing of the glyphs... *)
-  (* for truetype text. we use alpha_luminance format, twice smaller as
-     the rgba format *)
-  let text_image message size flag =
-    let text =
-      match flag with
-      | Normal ->
-          if size <> !current_font_size then (
-            current_font := Sdlttf.open_font !font_path size |> go;
-            current_font_size := size);
-          (* avoid opening the same font every time *)
-          Sdlttf.render_utf8_blended !current_font message
-            (sdl_color (opaque black))
-          |> go
-      | Latex -> latex_to_sdl message size
-    in
-    let w, h = Sdl.get_surface_size text in
+  let alpha_lum_of_sdl text_image =
+    let w, h = Sdl.get_surface_size text_image in
     let image_width = power_of_two w and image_height = power_of_two (h + 1) in
     (* on initialise l'image a zéro. Sûrement d'autres moyens de faire
        ça. Je ne sais pas d'ailleurs si cela alloue deux fois la place voulue
@@ -871,20 +854,20 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       for j = 0 to h - 1 do
         Raw.sets (GlPix.to_raw pixel)
           ~pos:(2 * (((j + 1) * image_width) + i))
-            (* j+1: une ligne de rab pour opengl ...? Faut-il augmenter
-               image_height aussi ? *)
+          (* j+1: une ligne de rab pour opengl ...? Faut-il augmenter
+             image_height aussi ? *)
           (let (a, _, _), d =
-             sdl_get_pixel text i (h - 1 - j)
+             sdl_get_pixel text_image i (h - 1 - j)
              (* il faut renverser l'image *)
            in
            [| 255 - a; d |])
-        (* 255-a pour pngalpha *)
+          (* 255-a pour pngalpha *)
       done
     done;
     (pixel, w, h)
 
   (* idem pour une image sdl rgba générale. inutilisé pour le moment *)
-  let image_of_sdl image =
+  let argb_of_sdl image =
     let w, h = Sdl.get_surface_size image in
     let image_width = power_of_two w and image_height = power_of_two h in
     let r =
@@ -904,6 +887,26 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       done
     done;
     (pixel, w, h)
+
+  (* renvoie une texture opengl contenant le message affiché avec la
+     fonte FreeSans ou avec LaTeX, ainsi que les dimensions du texte *)
+  (* would be cool to have instead a vectorial drawing of the glyphs... *)
+  (* for truetype text. we use alpha_luminance format, twice smaller as
+     the rgba format *)
+  let text_image message size flag =
+    let text =
+      match flag with
+      | Normal ->
+          if size <> !current_font_size then (
+            current_font := Sdlttf.open_font !font_path size |> go;
+            current_font_size := size);
+          (* avoid opening the same font every time *)
+          Sdlttf.render_utf8_blended !current_font message
+            (sdl_color (opaque black))
+          |> go
+      | Latex -> latex_to_sdl message size
+    in
+    argb_of_sdl text
 
   (* l'image est rescalée pour que la taille soit indépendante de tout
      (donc une fonte 12 points affiche toujours 12 pixels) *)

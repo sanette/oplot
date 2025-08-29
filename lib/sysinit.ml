@@ -172,7 +172,7 @@ let shell command =
     if Debug.debug then print_endline s;
     match Sys.command s with 0 -> () | a -> raise (Shell_error (a, s))
   in
-  Printf.kprintf exec command
+  Printf.ksprintf exec command
 
 (* vérifie si gs est compilé avec le device "pngalpha" *)
 let pngalpha () = Sys.command "gs --help | grep pngalpha > /dev/null" = 0
