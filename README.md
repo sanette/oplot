@@ -44,6 +44,14 @@ toplevel. See the [README](top/README.md) file.
 
 ## Dependencies
 
+* `oplot` requires `lablgl`. If you have any trouble with this, try [this one.](https://github.com/sanette/lablgl-lib/tree/master?tab=readme-ov-file#how-to-use-this-one-instead-of-the-original-lablgl):
+
+```
+opam pin add https://github.com/sanette/lablgl-lib.git
+opam install lablgl.1.07-lib
+
+```
+
 * For PDF output you need to install the `fig2dev` system package.
 
 * For LaTeX display you need a working LaTeX installation; for
