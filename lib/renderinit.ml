@@ -293,9 +293,9 @@ let get_dpi () =
       if abs (d1 - d2) > 5 then begin
         Debug.print
           "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing \
-           the smaller."
+           the larger."
           d2 d1;
-        Some (min d1 d2)
+        Some (max d1 d2)
       end
       else Some d2
 
