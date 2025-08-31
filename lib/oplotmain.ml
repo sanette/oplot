@@ -1580,6 +1580,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* rem: on autorise les axes en dehors de la figure. Ca peut permettre
      de ne voir qu'un axe sur les deux si on veut. Mais pb pour eps ! *)
   let draw_axis a ?(dev = !default_device) view =
+    Debug.print "draw_axis";
     let view_has_changed =
       !force_refresh
       ||
