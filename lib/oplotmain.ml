@@ -894,6 +894,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* for truetype text. we use alpha_luminance format, twice smaller as
      the rgba format *)
   let text_image message size flag =
+    Debug.print "text_image [%s]" message;
     let text =
       match flag with
       | Normal ->
@@ -1529,7 +1530,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | GL ->
         let image, w, h =
           match t.pix with
-          | Some (pix, w, h) when not !force_refresh -> (pix, w, h)
+          | Some (pix, w, h) when not !force_refresh ->
+            Debug.print "use old pix"; (pix, w, h)
           (* : on ne calcule l'image qu'une fois ! *)
           | _ ->
               let pix = text_image t.text (iscale t.size) t.flag in
