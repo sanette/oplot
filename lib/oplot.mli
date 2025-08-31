@@ -429,6 +429,7 @@ module Plt : sig
     val gl_mouse_motion : int -> int -> unit
     val interrupt : unit -> unit
     val latex_to_sdl : string -> int -> Tsdl.Sdl.surface
+    val sdl_screenshot : ?output:string -> unit -> unit
 
     exception Shell_error of (int * string)
 
