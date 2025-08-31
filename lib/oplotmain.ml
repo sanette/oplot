@@ -1725,7 +1725,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     in
     draw_segments axis_segments view ~dev;
     incr counter;
-    List.iter (draw_text view ~dev) text_labels
+    List.iter (draw_text view ~dev) text_labels;
+    Debug.print "Done draw_axis"
   (*   List.iter (draw_text view ~dev) l_vnum;;*)
 
   (********************************************************************)
