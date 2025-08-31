@@ -868,6 +868,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   (* idem pour une image sdl rgba générale. inutilisé pour le moment *)
   let argb_of_sdl image =
+    Debug.print "argb_of_sdl";
     let w, h = Sdl.get_surface_size image in
     let image_width = power_of_two w and image_height = power_of_two h in
     let r =
