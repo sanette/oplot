@@ -944,8 +944,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (***********************************)
   (* I wish there was a conversion Raw.t --> Bigarray !! *)
 
-  let sdl_screenshot ?(output = png_output) () =
-    Gl.finish ();
+  let sdl_make_surface () =
+        Gl.finish ();
     (* let t0 = time () in *)
     let w = !window_width + !left_margin + !right_margin in
     let h = !window_height + !top_margin + !bottom_margin in
@@ -978,6 +978,10 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     done;
     Sdl.unlock_surface s;
     (* Debug.print "Screenshot surface created in %u ms" (time () - t0); *)
+    s
+
+  let sdl_screenshot ?(output = png_output) () =
+    let s = sdl_make_surface () in
     match Tsdl_image.Image.save_png s output with
     | 0 -> print_endline (Printf.sprintf "Screenshot saved to [%s]." output)
     | i -> Sdl.log "Error %i when saving screenshot to: %s" i output
