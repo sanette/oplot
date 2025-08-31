@@ -131,12 +131,12 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
             Sdl.quit ());
         (* if !multisampling then Sdlgl.set_attr [ Sdlgl.MULTISAMPLEBUFFERS 1; *)
         (*             Sdlgl.MULTISAMPLESAMPLES 4]; *)
-        match Sdl.get_display_dpi 0 with
-        | Ok (x, _, _) ->
-            Debug.print "DPI detected by SDL: %f" x;
-            gl_scale := max 1. (x /. 110.)
-        | Error (`Msg m) -> Debug.print "Cannot get DPI from SDL: %s" m
       end;
+      let () = match Sdl.get_display_dpi 0 with
+        | Ok (x, _, _) ->
+          Debug.print "DPI detected by SDL: %f" x;
+          gl_scale := max 1. (x /. 110.)
+        | Error (`Msg m) -> Debug.print "Cannot get DPI from SDL: %s" m in
       if !win = None then begin
         scale_window ();
         dpi_scale := sdl_get_dpi_scale ();
@@ -146,14 +146,14 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
             Sdl.Window.(opengl + resizable + allow_highdpi)
         with
         | Error (`Msg e) ->
-            Sdl.log "Create window error: %s" e;
-            raise (Debug.Sdl_error e)
+          Sdl.log "Create window error: %s" e;
+          raise (Debug.Sdl_error e)
         | Ok wn ->
-            win := Some wn;
-            if !dpi_scale <> 1. then
-              let rw, rh = Sdl.gl_get_drawable_size wn in
-              (* size in hardware pixels *)
-              resize_window rw rh
+          win := Some wn;
+          if !dpi_scale <> 1. then
+            let rw, rh = Sdl.gl_get_drawable_size wn in
+            (* size in hardware pixels *)
+            resize_window rw rh
       end;
       if not show then do_option !win Sdl.hide_window;
       Sdlttf.init () |> go;
@@ -164,16 +164,16 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     in
     (try crucial ()
      with Debug.Sdl_error _ -> (
-       Debug.print "Hum... Trying again";
-       Sdl.quit ();
-       multisampling := false;
-       Unix.sleep 1;
-       try crucial ()
-       with Debug.Sdl_error e ->
-         Debug.print "Sdl error %s" e;
-         do_option !glcontext Sdl.gl_delete_context;
+         Debug.print "Hum... Trying again";
          Sdl.quit ();
-         exit 1));
+         multisampling := false;
+         Unix.sleep 1;
+         try crucial ()
+         with Debug.Sdl_error e ->
+           Debug.print "Sdl error %s" e;
+           do_option !glcontext Sdl.gl_delete_context;
+           Sdl.quit ();
+           exit 1));
 
     (* GlClear.color (float_of_color !default_bg_color);
        GlClear.clear [ `depth ];
