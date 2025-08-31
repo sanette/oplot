@@ -926,6 +926,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     (* on trace un rectangle de couleur sur lequel la texture va se
        fixer *)
     let fw, fh = (float (GlPix.width image), float (GlPix.height image)) in
+    Debug.print "(%f,%f)" fw fh;
     let rx, ry = (fw /. !fwindow_width, fh /. !fwindow_height) in
     (* ratios à adapter à bounding box : draw of pixel !window_width !window_height. 601 au lieu de 600 pour un petit pb d'arrondi (?) que je ne comprends pas trop *)
     GlTex.env mode;
