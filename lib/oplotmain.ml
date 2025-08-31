@@ -940,7 +940,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     GlTex.coord2 (1.0, 0.0);
     GlDraw.vertex2 (x0 +. rx, y0);
     GlDraw.ends ();
-    Gl.disable `texture_2d
+    Gl.disable `texture_2d;
+    Debug.print "done draw_image"
   (* GlFunc.blend_func ~src:`src_alpha ~dst:`one_minus_src_alpha;; *)
 
   (***********************************)
