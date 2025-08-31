@@ -922,6 +922,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       [ `mag_filter `nearest; `min_filter `nearest ];
     GlTex.image2d image;
     (* utilisation de image comme texture *)
+    Debug.print "gl enable texture";
     Gl.enable `texture_2d;
     (* on trace un rectangle de couleur sur lequel la texture va se
        fixer *)
