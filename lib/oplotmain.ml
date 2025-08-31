@@ -920,6 +920,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     List.iter
       (GlTex.parameter ~target:`texture_2d)
       [ `mag_filter `nearest; `min_filter `nearest ];
+    Debug.print "gltex image";
     GlTex.image2d image;
     (* utilisation de image comme texture *)
     Debug.print "gl enable texture";
