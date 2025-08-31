@@ -888,6 +888,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
            [| a; b; c; d |])
       done
     done;
+    Debug.print "done argb_of_sdl";
     (pixel, w, h)
 
   (* renvoie une texture opengl contenant le message affiché avec la
