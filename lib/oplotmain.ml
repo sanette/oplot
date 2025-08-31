@@ -1502,6 +1502,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
            pair ps)
 
   let draw_text ?(dev = !default_device) ?dep view t =
+    Debug.print "draw_text [%s]" t.text;
     let x0, y0 = draw_of_point t.pos view (bounding_box dev) in
     match dev with
     | X11 ->
