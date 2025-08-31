@@ -880,6 +880,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       GlPix.of_raw r ~format:`rgba ~width:image_width ~height:image_height
     in
     for i = 0 to w - 1 do
+      Debug.print "i=%i" i;
       for j = 0 to h - 1 do
         Raw.sets (GlPix.to_raw pixel)
           ~pos:(4 * ((j * image_width) + i))
