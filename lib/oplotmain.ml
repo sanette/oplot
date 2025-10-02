@@ -11,6 +11,8 @@ Debug.print "* Loading oplotmain"
 
 module Make (Graphics : Make_graphics.GRAPHICS) = struct
   open Tsdl
+  module Gl = Gl_legacy
+  module Gl3 = Tgl3.Gl
   open Common
   open Points
   open Point2
@@ -118,6 +120,12 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         end
         else 1.
 
+  let gl_clear_color c =
+    Gl.clear_color c.r c.g c.b 1.0
+
+  let gl_draw_color c =
+    Gl.color3f c.r c.g c.b
+
   let sdl_init ~show () =
     let crucial () =
       if Sdl.Init.test (Sdl.was_init None) Sdl.Init.video then
@@ -131,12 +139,12 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
             Sdl.quit ());
         (* if !multisampling then Sdlgl.set_attr [ Sdlgl.MULTISAMPLEBUFFERS 1; *)
         (*             Sdlgl.MULTISAMPLESAMPLES 4]; *)
-      end;
-      let () = match Sdl.get_display_dpi 0 with
+        match Sdl.get_display_dpi 0 with
         | Ok (x, _, _) ->
-          Debug.print "DPI detected by SDL: %f" x;
-          gl_scale := max 1. (x /. 110.)
-        | Error (`Msg m) -> Debug.print "Cannot get DPI from SDL: %s" m in
+            Debug.print "DPI detected by SDL: %f" x;
+            gl_scale := max 1. (x /. 110.)
+        | Error (`Msg m) -> Debug.print "Cannot get DPI from SDL: %s" m
+      end;
       if !win = None then begin
         scale_window ();
         dpi_scale := sdl_get_dpi_scale ();
@@ -146,14 +154,14 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
             Sdl.Window.(opengl + resizable + allow_highdpi)
         with
         | Error (`Msg e) ->
-          Sdl.log "Create window error: %s" e;
-          raise (Debug.Sdl_error e)
+            Sdl.log "Create window error: %s" e;
+            raise (Debug.Sdl_error e)
         | Ok wn ->
-          win := Some wn;
-          if !dpi_scale <> 1. then
-            let rw, rh = Sdl.gl_get_drawable_size wn in
-            (* size in hardware pixels *)
-            resize_window rw rh
+            win := Some wn;
+            if !dpi_scale <> 1. then
+              let rw, rh = Sdl.gl_get_drawable_size wn in
+              (* size in hardware pixels *)
+              resize_window rw rh
       end;
       if not show then do_option !win Sdl.hide_window;
       Sdlttf.init () |> go;
@@ -164,16 +172,16 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     in
     (try crucial ()
      with Debug.Sdl_error _ -> (
-         Debug.print "Hum... Trying again";
+       Debug.print "Hum... Trying again";
+       Sdl.quit ();
+       multisampling := false;
+       Unix.sleep 1;
+       try crucial ()
+       with Debug.Sdl_error e ->
+         Debug.print "Sdl error %s" e;
+         do_option !glcontext Sdl.gl_delete_context;
          Sdl.quit ();
-         multisampling := false;
-         Unix.sleep 1;
-         try crucial ()
-         with Debug.Sdl_error e ->
-           Debug.print "Sdl error %s" e;
-           do_option !glcontext Sdl.gl_delete_context;
-           Sdl.quit ();
-           exit 1));
+         exit 1));
 
     (* GlClear.color (float_of_color !default_bg_color);
        GlClear.clear [ `depth ];
@@ -194,16 +202,26 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* doit être appelé après resize_window pour mettre les variables globales à
      jour *)
   let gl_resize () =
-    GlDraw.viewport ~x:0 ~y:0
-      ~w:(!window_width + !left_margin + !right_margin)
-      ~h:(!window_height + !top_margin + !bottom_margin);
-    GlMat.mode `projection;
-    GlMat.load_identity ();
+    Gl.viewport 0 0
+      (!window_width + !left_margin + !right_margin)
+      (!window_height + !top_margin + !bottom_margin);
+    Gl.matrix_mode Gl.projection;
+    Gl.load_identity ();
     let bb = bounding_box GL in
     let dxl, dyb = draw_of_pixel (!left_margin, !bottom_margin) bb
     and dxr, dyt = draw_of_pixel (!right_margin, !top_margin) bb in
-    GlMat.ortho ~x:(-.dxl, 1. +. dxr) ~y:(-.dyb, 1. +. dyt) ~z:(-2., 2.);
-    GlMat.mode `modelview
+    Gl.ortho (-.dxl) (1. +. dxr) (-.dyb) (1. +. dyt) (-2.) (2.);
+    Gl.matrix_mode Gl.modelview
+
+  let gl_rotated2d angle =
+    let bb = bounding_box GL in
+    let dxl, dyb = draw_of_pixel (!left_margin, !bottom_margin) bb
+    and dxr, dyt = draw_of_pixel (!right_margin, !top_margin) bb in
+    let x = (1. +. dxl +. dxr) /. 2. in
+    let y = (1. +. dyb +. dyt) /. 2. in
+    Gl.translatef x y 0.;
+    Gl.rotated angle 0. 0. 1.;
+    Gl.translatef (-. x) (-. y) 0.
 
   let gl_init ?(show = true) () =
     (match !default_gl with
@@ -211,24 +229,24 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | SDL -> sdl_init ~show ()
     | GTK -> gtk_init ());
     Debug.print "GL inits...";
-    GlClear.color (float_of_color !default_bg_color);
-    GlClear.clear [ `depth ];
-
+    gl_clear_color !default_bg_color;
+    Gl3.clear Gl3.depth;
+    Gl3.pixel_storei Gl3.unpack_alignment 1;
     (*  if !multisampling then Gl.enable `multisample else *)
 
     (* Gl.enable `line_smooth;*)
-    Gl.disable `polygon_smooth;
+    Gl3.disable Gl3.polygon_smooth;
     (* sinon on voit les triangulations *)
-    GlMisc.hint `line_smooth `fastest;
-    Gl.enable `blend;
+    Gl3.hint Gl3.line_smooth Gl3.fastest;
+    Gl3.enable Gl3.blend;
 
     (* Gl.enable `point_smooth; *)
     (* Peut causer d'énormes ralentissements sur certaines implémentations !! *)
-    GlFunc.blend_func ~src:`src_alpha ~dst:`one_minus_src_alpha;
-    GlDraw.line_width !gl_scale;
-    GlDraw.point_size !gl_scale;
-    Gl.enable `polygon_offset_fill;
-    GlDraw.polygon_offset ~factor:1. ~units:1.;
+    Gl3.blend_func Gl3.src_alpha Gl3.one_minus_src_alpha;
+    Gl3.line_width !gl_scale;
+    Gl3.point_size !gl_scale;
+    Gl3.enable Gl3.polygon_offset_fill;
+    Gl3.polygon_offset 1. 1.;
     gl_resize ();
 
     (*  GlMat.frustum ~x:(-1. , 1.) ~y:(-. 600. /. 800. , 600. /. 800.) ~z:(2. , 6.); *)
@@ -237,7 +255,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     (* GluMat.perspective ~fovy:60. ~aspect:(800./.600.) ~z:(100.,-.150.); *)
     (* ??? *)
     (* en cas de frustum:  GlMat.translate ~z:(-4.) (); *)
-    GlMat.push ();
+    Gl.push_matrix ();
     (* on sauve la position initiale *)
     Gl.flush ();
     Debug.print "gl_init OK"
@@ -299,7 +317,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
      !, et puis faire les dégradés... ***)
 
   let text_token = 1.
-  let insert_token x = GlMisc.pass_through x
+  let insert_token x = Gl.Feedback.pass_through x
 
   exception Feedback_Buffer_Overflow
 
@@ -313,17 +331,16 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       reset_gllist := true;
       (* gllists are not rendered in feedback mode. *)
       gl_init ();
-      let r = Raw.create_static `float ~len:(1 lsl i) in
-      GlMisc.feedback_buffer ~mode:`_3d_color r;
-      ignore (GlMisc.render_mode `feedback);
-      GlDraw.color (float_of_color default_color);
+      let r = Gl.Feedback.setup (1 lsl i) Gl.Feedback.GL_3D_COLOR in
+      ignore (Gl.render_mode Gl.FEEDBACK);
+      gl_draw_color default_color;
       Debug.print "draw in feedback mode...";
       draw_proc ();
       Debug.print "done";
-      let num = GlMisc.render_mode `render in
+      let num = Gl.render_mode Gl.RENDER in
       if num < 0 then
         if i < 31 then (
-          Raw.free_static r;
+          (* r can be freed. automatic? *)
           loop (i + 1))
         else raise Feedback_Buffer_Overflow
       else begin
@@ -336,26 +353,29 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   (*on commence avec une taille de 2^16=65536*)
 
-  let get_vertex r pos =
-    let coord = Raw.gets_float r ~pos ~len:3 in
-    let colour = Raw.gets_float r ~pos:(pos + 3) ~len:4 in
+  let get_vertex r pos = let open Bigarray.Array1 in
+    let coord = sub r pos 3 in
+    let colour = sub r (pos + 3) 4 in
     (coord, colour)
 
-  let point_of_vertex (coord, _colour) = { x = coord.(0); y = coord.(1) }
-  let depth_of_vertex (coord, _colour) = coord.(2)
+  let point_of_vertex (coord, _colour) = let open Bigarray.Array1 in
+    { x = get coord (0); y = get coord (1) }
 
-  let color_of_vertex (_coord, colour) =
-    let a = colour.(3) in
+  let depth_of_vertex (coord, _colour) = let open Bigarray.Array1 in
+    get coord (2)
+
+  let color_of_vertex (_coord, colour) = let open Bigarray.Array1 in
+    let a = get colour 3 in
     if a <> 1. then begin
       prerr_endline (Printf.sprintf "Feedback Alpha:%f\n" a);
       flush stderr
     end;
-    { r = colour.(0); g = colour.(1); b = colour.(2) }
+    { r = get colour 0; g = get colour 1; b = get colour 2 }
 
   (* inutile *)
   let feedback_print r n =
     for i = 0 to n - 1 do
-      Printf.printf "%d: %f\n" i (Raw.get_float r ~pos:i)
+      Printf.printf "%d: %f\n" i (Bigarray.Array1.get r i)
     done
 
   let () = Debug.print "Initialise feedback constants"
@@ -366,11 +386,6 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       (float (!window_height + !top_margin))
 
   let gl_vertex_size = 7
-  let gl_pass_through_token = 1792.0
-  let gl_point_token = 1793.0
-  let gl_line_token = 1794.0
-  let gl_polygon_token = 1795.0
-  let gl_line_reset_token = 1799.0
 
   (* fournit un plot object list [Color c ; Points pl] avec des points
      consécutifs (donc de la même couleur) nmax est 1+l'indice max du
@@ -379,7 +394,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   *)
   let feedback_parse_point r n0 nmax =
     let rec loop n c0 pl depsum nombre =
-      if n >= nmax || Raw.get_float r ~pos:n <> gl_point_token then
+      if n >= nmax ||
+         Gl.Feedback.tokenf (Bigarray.Array1.get r n) <> Gl.Feedback.POINT then
         (pl, depsum, nombre, n)
       else
         let v = get_vertex r (n + 1) in
@@ -402,7 +418,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   *)
   let feedback_parse_line r n0 nmax =
     let rec loop n p0 c0 d0 pl depsum nombre =
-      if n >= nmax || Raw.get_float r ~pos:n <> gl_line_token then
+      if n >= nmax ||
+         Gl.Feedback.tokenf (Bigarray.Array1.get r n) <> Gl.Feedback.LINE then
         (pl, depsum, nombre, n)
       else
         let v1, v2 =
@@ -451,7 +468,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         let p = point_of_vertex v and d = depth_of_vertex v in
         loop (n + gl_vertex_size) nfin (p :: pl) (depsum +. d) (nombre + 1)
     in
-    let num = int_of_float (Raw.get_float r ~pos:(n0 + 1)) in
+    let num = int_of_float (Bigarray.Array1.get r (n0 + 1)) in
     let v0 = get_vertex r (n0 + 2) in
     let c0 = color_of_vertex v0 in
     let pl, depsum, nombre, n =
@@ -461,7 +478,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     ([ Color c0; Poly pl ], poly_offset +. (depsum /. float nombre), n)
 
   let feedback_parse_pass r n0 =
-    let token = Raw.get_float r ~pos:(n0 + 1) in
+    let token = Bigarray.Array1.get r (n0 + 1) in
     if token = text_token then raise (Not_implemented "text token")
     else raise (Not_implemented "unknown pass-through")
 
@@ -474,14 +491,15 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let rec loop n pl =
       if n >= nmax then pl
       else
-        let token = Raw.get_float r ~pos:n in
-        let pl', dep, n' =
-          if token = gl_point_token then feedback_parse_point r n nmax
-          else if token = gl_line_token || token = gl_line_reset_token then
-            feedback_parse_line r n nmax
-          else if token = gl_polygon_token then feedback_parse_poly r n nmax
-          else if token = gl_pass_through_token then feedback_parse_pass r n
-          else raise (Not_implemented "unknown token")
+        let x = Bigarray.Array1.get r n in
+        let open Gl.Feedback in
+        let pl', dep, n' = match tokenf x with
+          | POINT -> feedback_parse_point r n nmax
+          | LINE
+          | LINE_RESET -> feedback_parse_line r n nmax
+          | POLYGON -> feedback_parse_poly r n nmax
+          | PASS_THROUGH -> feedback_parse_pass r n
+          | _ -> raise (Not_implemented "unknown token")
         in
         loop n' ((pl', dep) :: pl)
     in
@@ -520,56 +538,56 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let switch_light bool =
     match bool with
     | true ->
-        Gl.enable `lighting;
-        GlLight.light ~num:0 (`position (1., -1., 1., 0.5));
-        GlLight.light ~num:0 (`specular (0., 0., 0., 1.));
-        GlLight.light ~num:0 (`diffuse (0.2, 0.2, 0.2, 0.8));
-        GlLight.light_model (`two_side true);
-        Gl.enable `light0;
-        GlLight.material ~face:`front (`shininess 30.);
-        GlLight.material ~face:`front (`emission (0.2, 0.2, 0.2, 1.));
-        GlLight.material ~face:`back (`shininess 10.);
-        GlLight.material ~face:`back (`emission (0.1, 0.1, 0.1, 1.));
-        Gl.enable `color_material;
-        GlLight.color_material ~face:`both `specular;
-        GlLight.color_material ~face:`both `ambient_and_diffuse
+        Gl.enable Gl.lighting;
+        Gl.lightfv Gl.light0 Gl.position [|1.; -1.; 1.; 0.5|];
+        Gl.lightfv Gl.light0 Gl.specular [|0.; 0.; 0.; 1.|];
+        Gl.lightfv Gl.light0 Gl.diffuse [|0.2; 0.2; 0.2; 0.8|];
+        Gl.light_modelf Gl.light_model_two_side 1.0;
+        Gl.enable Gl.light0;
+        Gl.materialf Gl.front Gl.shininess 30.;
+        Gl.materialfv Gl.front Gl.emission [|0.2; 0.2; 0.2; 1.|];
+        Gl.materialf Gl.back Gl.shininess 10.;
+        Gl.materialfv Gl.back Gl.emission [|0.1; 0.1; 0.1; 1.|];
+        Gl.enable Gl.color_material_enum;
+        Gl.color_material Gl.front_and_back Gl.specular;
+        Gl.color_material Gl.front_and_back Gl.ambient_and_diffuse
     | false ->
-        Gl.disable `lighting;
-        Gl.disable `color_material
+        Gl.disable Gl.lighting;
+        Gl.disable Gl.color_material_enum
 
   (**********  pour entrer dans le mode oplot 3D ************)
   let enter3d ({ Point3.x = x1; y = y1; _ }, { Point3.x = x2; y = y2; _ }) =
-    GlMat.push ();
-    GlMat.mode `projection;
-    GlMat.push ();
-    GlMat.load_identity ();
-    GlMat.ortho ~x:(x1, x2) ~y:(y1, y2) ~z:(-100., 100.);
+    Gl.push_matrix ();
+    Gl.matrix_mode Gl.projection;
+    Gl.push_matrix ();
+    Gl.load_identity ();
+    Gl.ortho (x1) (x2) (y1) (y2) (-100.) (100.);
     (* à remplacer par les valeurs zmin zmax, ajustées pour permettre la rotation *)
-    GlMat.mode `modelview;
-    GlMat.load_identity ();
-    GlMat.translate ~z:(-50.) ();
+    Gl.matrix_mode Gl.modelview;
+    Gl.load_identity ();
+    Gl.translatef 0. 0. (-50.);
     (*perspective : bien ?
       GlMat.frustum ~x:(-1. , 1.) ~y:(-. 600. /. 800. , 600. /. 800.) ~z:(2. , 6.);
-      GlMat.translate ~z:(-4.) (); *)
+      Gl.translate ~z:(-4.) (); *)
     switch_light !light_on;
 
     (* si on met dans une displaylist la lumière n'est calculée qu'une fois. *)
 
     (*****************)
     let zoom = !zoom3d in
-    GlMat.scale ~x:zoom ~y:zoom ~z:zoom ();
+    Gl.scalef zoom zoom zoom;
     (* inutile et lent ? *)
-    let rot = GlMat.of_array (Geom.q_matrix !position3d) in
-    GlMat.mult rot;
-    Gl.enable `depth_test
+    let rot = Geom.q_matrix_ba !position3d in
+    Gl.mult_matrixf rot;
+    Gl.enable Gl.depth_test
 
   let leave3d () =
-    Gl.disable `depth_test;
-    GlMat.mode `projection;
+    Gl.disable Gl.depth_test;
+    Gl.matrix_mode Gl.projection;
     switch_light false;
-    GlMat.pop ();
-    GlMat.mode `modelview;
-    GlMat.pop ()
+    Gl.pop_matrix ();
+    Gl.matrix_mode Gl.modelview;
+    Gl.pop_matrix ()
 
   (*********** partie tracé *************)
 
@@ -708,7 +726,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let r, num = feedback_render gldraw_func in
     Debug.print "feedback_render OK";
     let parsed = feedback_parse r num in
-    Raw.free_static r;
+    (* Raw.free_static r; *)
     let fb_view, fb_list = (maxview (List.hd parsed), List.tl parsed) in
     List.iter (fun o -> plot_func ~dev:FIG o fb_view) fb_list;
     (* leave3d (); *)
@@ -717,28 +735,29 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (**************)
 
   let copy_back_buffer () =
-    GlFunc.draw_buffer `front;
-    GlFunc.read_buffer `back;
-    GlPix.copy ~x:0 ~y:0 ~width:!window_width ~height:!window_height
-      ~buffer:`color;
-    GlFunc.draw_buffer `back;
-    GlFunc.read_buffer `back
+    Gl3.draw_buffer Gl3.front;
+    Gl3.read_buffer Gl3.back;
+    Gl.copy_pixels 0 0 !window_width !window_height Gl.color;
+    Gl3.draw_buffer Gl3.back;
+    Gl3.read_buffer Gl3.back
+
+  let buffer_enum i =
+    assert (i>=0 && i < 16);
+    Gl3.draw_buffer0 + i
 
   let copy_buffer i =
-    GlFunc.draw_buffer (`aux i);
-    GlFunc.read_buffer `back;
-    GlPix.copy ~x:0 ~y:0 ~width:!window_width ~height:!window_height
-      ~buffer:`color;
-    GlFunc.draw_buffer `back;
-    GlFunc.read_buffer `back
+    Gl3.draw_buffer (buffer_enum i);
+    Gl3.read_buffer Gl3.back;
+    Gl.copy_pixels 0 0 !window_width !window_height Gl.color;
+    Gl3.draw_buffer Gl3.back;
+    Gl3.read_buffer Gl3.back
 
   let recall_buffer i =
-    GlFunc.read_buffer (`aux i);
-    GlFunc.draw_buffer `back;
-    GlPix.copy ~x:0 ~y:0 ~width:!window_width ~height:!window_height
-      ~buffer:`color;
-    GlFunc.draw_buffer `back;
-    GlFunc.read_buffer `back
+    Gl3.read_buffer (buffer_enum i);
+    Gl3.draw_buffer Gl3.back;
+    Gl.copy_pixels 0 0 !window_width !window_height Gl.color;
+    Gl3.draw_buffer Gl3.back;
+    Gl3.read_buffer Gl3.back
 
   let user_flush = function
     | X11 -> Graphics.synchronize ()
@@ -753,7 +772,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* gestion des fontes ttf avec sdl *)
   (*  (pas si facile !)                 *)
 
-  let sdl_get_pixel surface x y =
+  let sdl_get_pixel_not_used surface x y =
     (* in principle one should check with MUST_LOCK if the surface is RLE encoded
        (otherwise there is no need to lock, see
        https://wiki.libsdl.org/SDL_LockSurface). But that's ok, if not, call to
@@ -826,170 +845,100 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
      (on peut aussi creer un objet Image)
   *)
 
-  (* calcule la plus petite puissance de deux supérieure ou égale à n *)
-  (* ( les textures opengl doivent avoir des dimensions puissances de deux) *)
-  let power_of_two n =
-    let rec pot n i = if i >= n then i else pot n (i lsl 1) in
-    pot n 1
-
-  let alpha_lum_of_sdl text_image =
-    let w, h = Sdl.get_surface_size text_image in
-    let image_width = power_of_two w and image_height = power_of_two (h + 1) in
-    (* on initialise l'image a zéro. Sûrement d'autres moyens de faire
-       ça. Je ne sais pas d'ailleurs si cela alloue deux fois la place voulue
-       ou non: *)
-    let r =
-      Raw.of_string
-        (String.make (image_width * image_height * 2) '\000')
-        ~kind:`ubyte
-    in
-    let pixel =
-      GlPix.of_raw r ~format:`luminance_alpha ~width:image_width
-        ~height:image_height
-    in
-    (* on copie l'image à la main (je ne sais pas faire autrement). On
-       pourrait aussi "Blitter" en faisant attention de préserver la
-       transparence alpha. Cf sdl manual. Ou Sdlgl.to_raw ?? *)
-    for i = 0 to w - 1 do
-      for j = 0 to h - 1 do
-        Raw.sets (GlPix.to_raw pixel)
-          ~pos:(2 * (((j + 1) * image_width) + i))
-          (* j+1: une ligne de rab pour opengl ...? Faut-il augmenter
-             image_height aussi ? *)
-          (let (a, _, _), d =
-             sdl_get_pixel text_image i (h - 1 - j)
-             (* il faut renverser l'image *)
-           in
-           [| 255 - a; d |])
-          (* 255-a pour pngalpha *)
-      done
-    done;
-    (pixel, w, h)
-
-  (* idem pour une image sdl rgba générale. inutilisé pour le moment *)
-  let argb_of_sdl image =
-    Debug.print "argb_of_sdl";
-    let w, h = Sdl.get_surface_size image in
-    let image_width = power_of_two w and image_height = power_of_two h in
-    let r =
-      Raw.of_string
-        (String.make (image_width * image_height * 4) '\000')
-        ~kind:`ubyte
-    in
-    let pixel =
-      GlPix.of_raw r ~format:`rgba ~width:image_width ~height:image_height
-    in
-    for i = 0 to w - 1 do
-      for j = 0 to h - 1 do
-        Raw.sets (GlPix.to_raw pixel)
-          ~pos:(4 * ((j * image_width) + i))
-          (let (a, b, c), d = sdl_get_pixel image i (h - 1 - j) in
-           [| a; b; c; d |])
-      done
-    done;
-    Debug.print "done argb_of_sdl";
-    (pixel, w, h)
-
-  (* renvoie une texture opengl contenant le message affiché avec la
+  (* renvoie une image contenant le message affiché avec la
      fonte FreeSans ou avec LaTeX, ainsi que les dimensions du texte *)
   (* would be cool to have instead a vectorial drawing of the glyphs... *)
-  (* for truetype text. we use alpha_luminance format, twice smaller as
-     the rgba format *)
   let text_image message size flag =
-    Debug.print "text_image [%s]" message;
-    let text =
-      match flag with
+    match flag with
       | Normal ->
-          if size <> !current_font_size then (
-            current_font := Sdlttf.open_font !font_path size |> go;
-            current_font_size := size);
-          (* avoid opening the same font every time *)
-          Sdlttf.render_utf8_blended !current_font message
-            (sdl_color (opaque black))
-          |> go
+        if size <> !current_font_size then (
+          current_font := Sdlttf.open_font !font_path size |> go;
+          current_font_size := size);
+        (* avoid opening the same font every time *)
+        let s = Sdlttf.render_utf8_blended !current_font message
+          (sdl_color (opaque black))
+                |> go in
+        Sdl.convert_surface_format s Sdl.Pixel.format_argb8888
+        |> go
       | Latex -> latex_to_sdl message size
-    in
-    argb_of_sdl text
+
 
   (* l'image est rescalée pour que la taille soit indépendante de tout
      (donc une fonte 12 points affiche toujours 12 pixels) *)
   (* je ne sais pas si c'est le mieux *)
+
   (* affiche une image en position x0 y0 et mode opengl "mode" *)
-  let draw_image ?(mode = `mode `modulate) image x0 y0 =
-    Debug.print "draw_image";
-    List.iter
-      (GlTex.parameter ~target:`texture_2d)
-      [ `mag_filter `nearest; `min_filter `nearest ];
-    Debug.print "gltex image";
-    GlTex.image2d image;
+  let draw_image ?(mode = Gl.modulate) image x0 y0 =
+    Gl3.tex_parameteri Gl3.texture_2d Gl3.texture_mag_filter Gl3.nearest;
+    Gl3.tex_parameteri Gl3.texture_2d Gl3.texture_min_filter Gl3.nearest;
+
+    (* Gl3.pixel_storei Gl3.unpack_row_length 0; *)
+
+    go (Sdl.lock_surface image);
+    let pixels = Sdl.get_surface_pixels image Bigarray.int8_unsigned in
+    let w, h = Sdl.get_surface_size image in
+    (* https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml *)
+    Gl3.tex_image2d Gl3.texture_2d 0 Gl3.rgba w h 0 Gl3.rgba Gl3.unsigned_byte
+      (`Data pixels);
+    Sdl.unlock_surface image;
+
     (* utilisation de image comme texture *)
-    Debug.print "gl enable texture";
-    Gl.enable `texture_2d;
+    Gl.enable Gl.texture_2d;
+    (* Gl3.enable Gl3.blend; *)
     (* on trace un rectangle de couleur sur lequel la texture va se
        fixer *)
-    let fw, fh = (float (GlPix.width image), float (GlPix.height image)) in
-    Debug.print "(%f,%f)" fw fh;
-    let rx, ry = (fw /. !fwindow_width, fh /. !fwindow_height) in
-    (* ratios à adapter à bounding box : draw of pixel !window_width !window_height. 601 au lieu de 600 pour un petit pb d'arrondi (?) que je ne comprends pas trop *)
-    GlTex.env mode;
-    (* =VERY IMPORTANT: but why any color seem to work ??? *)
-    GlDraw.begins `quads;
-    GlTex.coord2 (0.0, 0.0);
-    GlDraw.vertex2 (x0, y0);
-    GlTex.coord2 (0.0, 1.0);
-    GlDraw.vertex2 (x0, y0 +. ry);
-    GlTex.coord2 (1.0, 1.0);
-    GlDraw.vertex2 (x0 +. rx, y0 +. ry);
-    GlTex.coord2 (1.0, 0.0);
-    GlDraw.vertex2 (x0 +. rx, y0);
-    GlDraw.ends ();
-    Gl.disable `texture_2d;
-    Debug.print "done draw_image"
-  (* GlFunc.blend_func ~src:`src_alpha ~dst:`one_minus_src_alpha;; *)
+
+    let rx, ry = (float w /. !fwindow_width, float h /. !fwindow_height) in
+    (* ratios à adapter à bounding box : draw of pixel !window_width
+       !window_height. 601 au lieu de 600 pour un petit pb d'arrondi (?) que je
+       ne comprends pas trop *)
+    Gl.tex_envi Gl.texture_env Gl.texture_env_mode mode;
+    Gl.gl_begin Gl.quads;
+    Gl.tex_coord2d 0.0 0.0; Gl.vertex2d x0 (y0 +. ry);
+    Gl.tex_coord2d 0.0 1.0; Gl.vertex2d x0 y0;
+    Gl.tex_coord2d 1.0 1.0; Gl.vertex2d (x0 +. rx) y0;
+    Gl.tex_coord2d 1.0 0.0; Gl.vertex2d (x0 +. rx) (y0 +. ry);
+    Gl.gl_end ();
+    Gl.disable Gl.texture_2d
+  (* Gl3.blend_func ~src:`src_alpha ~dst:`one_minus_src_alpha;; *)
 
   (***********************************)
   (* screenshot *)
   (***********************************)
-  (* I wish there was a conversion Raw.t --> Bigarray !! *)
 
-  let sdl_make_surface () =
-        Gl.finish ();
+  let sdl_screenshot ?(output = png_output) () =
+    Gl.finish ();
     (* let t0 = time () in *)
     let w = !window_width + !left_margin + !right_margin in
     let h = !window_height + !top_margin + !bottom_margin in
-    let s =
-      Sdl.create_rgb_surface_with_format Sdl.Pixel.format_rgb24 ~w ~h ~depth:24
-      |> go
-    in
-    (* rgb888 avec depth=24 ne marche pas... en tout cas ça donne un tableau de
-       taille 4*w*h *)
-    let r =
-      GlPix.to_raw
-        (GlPix.read ~x:0 ~y:0 ~width:w ~height:h ~format:`rgb ~kind:`ubyte)
-    in
-    Sdl.lock_surface s |> go;
-    let pix = Sdl.get_surface_pixels s Bigarray.int8_unsigned in
-    (* Debug.print "Bigarray dim=%i, w*h=%i, Raw=%i" (Bigarray.Array1.dim pix) *)
-    (*   (w * h) (Raw.byte_size r); *)
-    assert (Bigarray.Array1.dim pix >= w * h * 3);
-    (* We put ">=" above instead of "=" because on macos we don't have strict
-       equality: w*h*3 + 2024, for some reason... *)
-    let pitch = Sdl.get_surface_pitch s in
-    (* For some reason, the image is upside-down, so we have to flip it while
-       copying: *)
-    for j = 0 to h - 1 do
-      let i_pix = (h - j - 1) * pitch in
-      let i_r = j * w * 3 in
-      for i = 0 to (w * 3) - 1 do
-        Bigarray.Array1.unsafe_set pix (i_pix + i) (Raw.get r ~pos:(i_r + i))
-      done
-    done;
-    Sdl.unlock_surface s;
-    (* Debug.print "Screenshot surface created in %u ms" (time () - t0); *)
-    s
 
-  let sdl_screenshot ?(output = png_output) () =
-    let s = sdl_make_surface () in
+    let ba_gl =
+      Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (w * h * 4)
+    in
+    Gl3.read_pixels 0 0 w h Gl3.rgba Gl3.unsigned_byte (`Data ba_gl);
+
+    let ba_sdl =
+      Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (w * h * 4)
+    in
+
+    (* Because of bottom-left origin of openGL pixels, we have to flip
+       vertically. One could use glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE)
+       instead, but this would require openGL 4.x *)
+    let pitch = 4 * w in
+    for y = 0 to h - 1 do
+      let src = Bigarray.Array1.sub ba_gl (y * pitch) pitch in
+      let dst = Bigarray.Array1.sub ba_sdl ((h - 1 - y) * pitch) pitch in
+      Bigarray.Array1.blit src dst
+    done;
+
+    let s = Sdl.create_rgb_surface_from ba_sdl ~w ~h ~depth:32 ~pitch:(w * 4)
+        0x000000ffl  (* Rmask *)
+        0x0000ff00l  (* Gmask *)
+        0x00ff0000l  (* Bmask *)
+        0xff000000l  (* Amask *)
+            |> go
+    in
+
     match Tsdl_image.Image.save_png s output with
     | 0 -> print_endline (Printf.sprintf "Screenshot saved to [%s]." output)
     | i -> Sdl.log "Error %i when saving screenshot to: %s" i output
@@ -1001,13 +950,13 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let set_line_width ?(dev = !default_device) w =
     match dev with
     | X11 -> Graphics.set_line_width (int_of_float w)
-    | GL -> GlDraw.line_width w
+    | GL -> Gl3.line_width w
     | FIG -> raise (Not_implemented "fig set_line_width")
 
   let set_point_size ?(dev = !default_device) w =
     match dev with
     | X11 -> raise (Not_implemented "X11 set_point_size")
-    | GL -> GlDraw.point_size w
+    | GL -> Gl3.point_size w
     | FIG -> raise (Not_implemented "fig set_line_size")
 
   let set_color ?(dev = !default_device) c =
@@ -1015,7 +964,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | X11 ->
         let r, g, b = int_of_color c in
         Graphics.set_color (Graphics.rgb r g b)
-    | GL -> GlDraw.color (c.r, c.g, c.b)
+    | GL -> gl_draw_color c
     | FIG ->
         if fig_of_color c = -1 then (
           let r = rgb_of_color c in
@@ -1055,9 +1004,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
           (Array.of_list
              (List.rev_map (fun (x, y) -> (int_of_float x, int_of_float y)) ps))
     | GL ->
-        GlDraw.begins `points;
-        List.iter GlDraw.vertex2 ps;
-        GlDraw.ends ()
+        Gl.gl_begin Gl.points;
+        List.iter (fun (x,y) -> Gl.vertex2f x y) ps;
+        Gl.gl_end ()
     | FIG ->
         (* we crop points outside the view *)
         let ps =
@@ -1088,9 +1037,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
           (Array.of_list
              (List.rev_map (fun (x, y) -> (int_of_float x, int_of_float y)) ps))
     | GL ->
-        GlDraw.begins `line_strip;
-        List.iter GlDraw.vertex2 ps;
-        GlDraw.ends ()
+        Gl.gl_begin Gl.line_strip;
+        List.iter (fun (x,y) -> Gl.vertex2f x y) ps;
+        Gl.gl_end ()
     | FIG ->
         let depth = get_depth dep and co = fig_of_color !current_color in
         Printf.fprintf !xfig_main_channel
@@ -1123,14 +1072,14 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
           (Array.of_list
              (List.rev_map (fun (x, y) -> (int_of_float x, int_of_float y)) ps))
     | GL ->
-        GlDraw.begins `polygon;
-        List.iter GlDraw.vertex2 ps;
-        GlDraw.ends ();
+        Gl.gl_begin Gl.polygon;
+        List.iter (fun (x,y) -> Gl.vertex2f x y) ps;
+        Gl.gl_end ();
         (* on retrace le bord pour anti-aliasing. A éviter en mode
            feedback ? *)
-        GlDraw.begins `line_loop;
-        List.iter GlDraw.vertex2 ps;
-        GlDraw.ends ()
+        Gl.gl_begin Gl.line_loop;
+        List.iter (fun (x,y) -> Gl.vertex2f x y) ps;
+        Gl.gl_end ()
     | FIG ->
         let depth = get_depth dep and co = fig_of_color !current_color in
         let bco =
@@ -1163,14 +1112,13 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
             for j = 0 to w - 1 do
               let c = float (m.(i).(j) - min_value) /. dc in
               let x = float j *. dx and y = float i *. dy in
-              let { r; g; b } = cmap c in
-              GlDraw.color (r, g, b);
-              GlDraw.begins `quads;
-              GlDraw.vertex2 (x, y);
-              GlDraw.vertex2 (x, y +. dy);
-              GlDraw.vertex2 (x +. dx, y +. dy);
-              GlDraw.vertex2 (x +. dx, y);
-              GlDraw.ends ()
+              gl_draw_color (cmap c);
+              Gl.gl_begin Gl.quads;
+              Gl.vertex2f x y;
+              Gl.vertex2f x (y +. dy);
+              Gl.vertex2f (x +. dx) (y +. dy);
+              Gl.vertex2f (x +. dx) y;
+              Gl.gl_end ()
             done
           done
       | FIG ->
@@ -1226,6 +1174,10 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       | Zoom (z, _) -> zoom3d := !zoom3d *. (1. +. (dt *. z t))
     end
 
+  let normal3 (x,y,z) = Gl.normal3f x y z
+  let vertex3 (x,y,z) = Gl.vertex3f x y z
+
+
   let rec draw_surf3d ?(dev = !default_device) ?(wire = true) gl plot_func mx my
       mz (p1, p2) =
     match dev with
@@ -1235,11 +1187,12 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         (* ne peut pas être mis dans la displaylist car contient la rotation qui
            doit s'actualiser *)
         match !gl with
-        | Some list when not !reset_gllist -> GlList.call list
+        | Some list when not !reset_gllist -> Gl.call_list list
         | _ ->
             (* on stocke les ordres graphiques dans une "display_list" opengl *)
             Debug.print "Creating display list";
-            let list = GlList.create `compile_and_execute in
+            let list = Gl.gen_lists 1 in
+            Gl.new_list list Gl.COMPILE_AND_EXECUTE;
             let h = Array.length mx - 2 and w = Array.length mx.(0) - 2 in
             let { r; g; b } = !current_color in
             (* faire une touche pour ça: *)
@@ -1250,11 +1203,13 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
               if (r *. r) +. (g *. g) +. (b *. b) > 1. then
                 fun ((_, _, z) : float * float * float) ->
                 let c = (z -. zmin) /. (zmax -. zmin) in
-                GlDraw.color (r *. c, g *. c, b *. c)
+                gl_draw_color {r = r *. c; g = g *. c; b = b *. c}
               else fun ((_, _, z) : float * float * float) ->
                 let c = (z -. zmin) /. (zmax -. zmin) in
-                GlDraw.color
-                  (c +. r -. (r *. c), c +. g -. (g *. c), c +. b -. (b *. c))
+                gl_draw_color
+                  {r = c +. r -. (r *. c);
+                   g = c +. g -. (g *. c);
+                   b = c +. b -. (b *. c)}
             in
             let a i j = (mx.(i).(j), my.(i).(j), mz.(i).(j)) in
             let normal_vector i j =
@@ -1272,27 +1227,27 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
               (* à refaire...*)
               a0 := (mx.(i).(1), my.(i).(1), mz.(i).(1));
               a1 := (mx.(i + 1).(1), my.(i + 1).(1), mz.(i + 1).(1));
-              GlDraw.color (r, g, b);
+              gl_draw_color !current_color;
               for j = 1 to w - 1 do
                 let a3 = (mx.(i).(j + 1), my.(i).(j + 1), mz.(i).(j + 1))
                 and a2 =
                   (mx.(i + 1).(j + 1), my.(i + 1).(j + 1), mz.(i + 1).(j + 1))
                 in
-                GlDraw.begins `quads;
+                Gl.gl_begin Gl.quads;
                 (* ou faire quad_strip ? *)
                 if not !light_on then setcolor !a0;
-                GlDraw.normal3 (normal_vector i j);
-                GlDraw.vertex3 !a0;
+                normal3 (normal_vector i j);
+                vertex3 !a0;
                 if not !light_on then setcolor !a1;
-                GlDraw.normal3 (normal_vector (i + 1) j);
-                GlDraw.vertex3 !a1;
+                normal3 (normal_vector (i + 1) j);
+                vertex3 !a1;
                 if not !light_on then setcolor a2;
-                GlDraw.normal3 (normal_vector (i + 1) (j + 1));
-                GlDraw.vertex3 a2;
+                normal3 (normal_vector (i + 1) (j + 1));
+                vertex3 a2;
                 if not !light_on then setcolor a3;
-                GlDraw.normal3 (normal_vector i (j + 1));
-                GlDraw.vertex3 a3;
-                GlDraw.ends ();
+                normal3 (normal_vector i (j + 1));
+                vertex3 a3;
+                Gl.gl_end ();
 
                 a0 := a3;
                 a1 := a2
@@ -1307,29 +1262,29 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
               let r, g, b =
                 if !light_on then (r, g, b) else (r /. 2., g /. 2., b /. 2.)
               in
-              GlDraw.color (r, g, b);
+              gl_draw_color {r; g; b};
               for ii = 1 to h / 2 do
                 let i = ii * 2 in
-                GlDraw.begins `line_strip;
+                Gl.gl_begin Gl.line_strip;
                 for j = 1 to w do
                   let a = (mx.(i).(j), my.(i).(j), mz.(i).(j)) in
-                  GlDraw.vertex3 a
+                  vertex3 a
                 done;
-                GlDraw.ends ()
+                Gl.gl_end ()
               done;
               for jj = 1 to w / 2 do
                 let j = jj * 2 in
-                GlDraw.begins `line_strip;
+                Gl.gl_begin Gl.line_strip;
                 for i = 1 to h do
                   let a = (mx.(i).(j), my.(i).(j), mz.(i).(j)) in
-                  GlDraw.vertex3 a
+                  vertex3 a
                 done;
-                GlDraw.ends ()
+                Gl.gl_end ()
               done
             end;
 
             leave3d ();
-            GlList.ends ();
+            Gl.end_list ();
             Debug.print "display list created.";
             gl := Some list
       end
@@ -1350,97 +1305,100 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | GL -> (
         enter3d (p1, p2);
         match !gl with
-        | Some list when not !reset_gllist -> GlList.call list
+        | Some list when not !reset_gllist -> Gl.call_list list
         | _ ->
-            (* on stocke les ordres graphiques dans une "display_list" opengl *)
-            let list = GlList.create `compile_and_execute in
-            let { Point3.x = x1; y = y1; z = zmin } = p1
-            and { Point3.x = x2; y = y2; z = zmax } = p2 in
-            let dx = (x2 -. x1) /. float w and dy = (y2 -. y1) /. float h in
-            let setcolor =
-              if (r *. r) +. (g *. g) +. (b *. b) > 1. then fun z ->
-                let c = (z -. zmin) /. (zmax -. zmin) in
-                GlDraw.color (r *. c, g *. c, b *. c)
-              else fun z ->
-                let c = (z -. zmin) /. (zmax -. zmin) in
-                GlDraw.color
-                  (c +. r -. (r *. c), c +. g -. (g *. c), c +. b -. (b *. c))
-            in
-            (* solid triangles(quads) *)
-            for i = 0 to h - 1 do
-              let y = y1 +. (float i *. dy) in
-              for j = 0 to w - 1 do
+          (* on stocke les ordres graphiques dans une "display_list" opengl *)
+          let list = Gl.gen_lists 1 in
+          Gl.new_list list Gl.COMPILE_AND_EXECUTE;
+          let { Point3.x = x1; y = y1; z = zmin } = p1
+          and { Point3.x = x2; y = y2; z = zmax } = p2 in
+          let dx = (x2 -. x1) /. float w and dy = (y2 -. y1) /. float h in
+          let setcolor =
+            if (r *. r) +. (g *. g) +. (b *. b) > 1. then fun z ->
+              let c = (z -. zmin) /. (zmax -. zmin) in
+              gl_draw_color {r = r *. c; g = g *. c; b = b *. c}
+            else fun z ->
+              let c = (z -. zmin) /. (zmax -. zmin) in
+              gl_draw_color
+                {r = c +. r -. (r *. c);
+                 g = c +. g -. (g *. c);
+                 b = c +. b -. (b *. c)}
+          in
+          (* solid triangles(quads) *)
+          for i = 0 to h - 1 do
+            let y = y1 +. (float i *. dy) in
+            for j = 0 to w - 1 do
+              let x = x1 +. (float j *. dx) and z = m.(i).(j) in
+              setcolor z;
+              Gl.gl_begin Gl.quads;
+              vertex3 (x, y, z);
+              let z = m.(i + 1).(j) in
+              setcolor z;
+              vertex3 (x, y +. dy, z);
+              let z = m.(i + 1).(j + 1) in
+              setcolor z;
+              vertex3 (x +. dx, y +. dy, z);
+              let z = m.(i).(j + 1) in
+              setcolor z;
+              vertex3 (x +. dx, y, z);
+              Gl.gl_end ()
+            done
+          done;
+          gl_draw_color !current_color;
+
+          if wire then begin
+            (* rem: pas pour xfig, utiliser des polygones à bord plutôt  ? *)
+            (*   GlDraw.polygon_mode ~face:`both `line ; *)
+            (*   for i=0 to (h-1) do *)
+            (*     let y = -.600. /. 800. +. (float i) *. dy in *)
+            (*       for j=0 to (w-1) do *)
+            (*         let x  = -.1. +. (float j) *. dx *)
+            (*         and z = m.(i).(j) in *)
+            (*    Gl.gl_begin `quads; *)
+            (*    vertex3(x, y, z); *)
+            (*    let z = m.(i+1).(j) in *)
+            (*      vertex3(x, y +. dy, z); *)
+            (*      let z = m.(i+1).(j+1) in *)
+            (*        vertex3(x +. dx, y +. dy, z); *)
+            (*        let z = m.(i).(j+1) in *)
+            (*          vertex3(x +. dx, y, z); *)
+            (*          Gl.gl_end () *)
+            (*       done; *)
+            (*   done; *)
+            (*  GlDraw.polygon_mode ~face:`both `fill ; *)
+
+            (*Gl3.line_width 1.5;*)
+            (* on trace une ligne sur deux*)
+            for ii = 0 to h / 2 do
+              let i = ii * 2 in
+              let y = y1 +. (float i *. dy) and z = m.(i).(0) in
+              Gl.gl_begin Gl.line_strip;
+              vertex3 (x1, y, z);
+              for j = 1 to w do
                 let x = x1 +. (float j *. dx) and z = m.(i).(j) in
-                setcolor z;
-                GlDraw.begins `quads;
-                GlDraw.vertex3 (x, y, z);
-                let z = m.(i + 1).(j) in
-                setcolor z;
-                GlDraw.vertex3 (x, y +. dy, z);
-                let z = m.(i + 1).(j + 1) in
-                setcolor z;
-                GlDraw.vertex3 (x +. dx, y +. dy, z);
-                let z = m.(i).(j + 1) in
-                setcolor z;
-                GlDraw.vertex3 (x +. dx, y, z);
-                GlDraw.ends ()
-              done
-            done;
-            GlDraw.color (r, g, b);
-
-            if wire then begin
-              (* rem: pas pour xfig, utiliser des polygones à bord plutôt  ? *)
-              (*   GlDraw.polygon_mode ~face:`both `line ; *)
-              (*   for i=0 to (h-1) do *)
-              (*     let y = -.600. /. 800. +. (float i) *. dy in *)
-              (*       for j=0 to (w-1) do *)
-              (*         let x  = -.1. +. (float j) *. dx *)
-              (*         and z = m.(i).(j) in *)
-              (*    GlDraw.begins `quads; *)
-              (*    GlDraw.vertex3(x, y, z); *)
-              (*    let z = m.(i+1).(j) in *)
-              (*      GlDraw.vertex3(x, y +. dy, z); *)
-              (*      let z = m.(i+1).(j+1) in *)
-              (*        GlDraw.vertex3(x +. dx, y +. dy, z); *)
-              (*        let z = m.(i).(j+1) in *)
-              (*          GlDraw.vertex3(x +. dx, y, z); *)
-              (*          GlDraw.ends () *)
-              (*       done; *)
-              (*   done; *)
-              (*  GlDraw.polygon_mode ~face:`both `fill ; *)
-
-              (*GlDraw.line_width 1.5;*)
-              (* on trace une ligne sur deux*)
-              for ii = 0 to h / 2 do
-                let i = ii * 2 in
-                let y = y1 +. (float i *. dy) and z = m.(i).(0) in
-                GlDraw.begins `line_strip;
-                GlDraw.vertex3 (x1, y, z);
-                for j = 1 to w do
-                  let x = x1 +. (float j *. dx) and z = m.(i).(j) in
-                  GlDraw.vertex3 (x, y, z)
-                done;
-                GlDraw.ends ()
+                vertex3 (x, y, z)
               done;
-              for jj = 0 to w / 2 do
-                let j = jj * 2 in
-                let x = x1 +. (float j *. dx) and z = m.(0).(j) in
-                GlDraw.begins `line_strip;
-                GlDraw.vertex3 (x, y1, z);
-                for i = 1 to h do
-                  let y = y1 +. (float i *. dy) and z = m.(i).(j) in
-                  GlDraw.vertex3 (x, y, z)
-                done;
-                GlDraw.ends ()
-              done
-              (*GlDraw.line_width 1.;*)
-            end;
-            leave3d ();
-            GlList.ends ();
-            gl := Some list)
+              Gl.gl_end ()
+            done;
+            for jj = 0 to w / 2 do
+              let j = jj * 2 in
+              let x = x1 +. (float j *. dx) and z = m.(0).(j) in
+              Gl.gl_begin Gl.line_strip;
+              vertex3 (x, y1, z);
+              for i = 1 to h do
+                let y = y1 +. (float i *. dy) and z = m.(i).(j) in
+                vertex3 (x, y, z)
+              done;
+              Gl.gl_end ()
+            done
+            (*Gl3.line_width 1.;*)
+          end;
+          leave3d ();
+          Gl.end_list ();
+          gl := Some list)
     | FIG ->
-        let draw () = draw_grid ~dev:GL ~wire:true gl plot_func m (p1, p2) in
-        gl2fig draw plot_func
+      let draw () = draw_grid ~dev:GL ~wire:true gl plot_func m (p1, p2) in
+      gl2fig draw plot_func
   (*    set_color !current_color;;*)
 
   let rec draw_curve3d ?(dev = !default_device) gl plot_func p3d (p1, p2) =
@@ -1449,24 +1407,25 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | GL -> begin
         enter3d (p1, p2);
         match !gl with
-        | Some list when not !reset_gllist -> GlList.call list
+        | Some list when not !reset_gllist -> Gl.call_list list
         | _ ->
-            (* on stocke les ordres graphiques dans une "display_list" opengl *)
-            let list = GlList.create `compile_and_execute in
-            GlDraw.begins `line_strip;
-            List.iter (fun { Point3.x; y; z } -> GlDraw.vertex3 (x, y, z)) p3d;
-            GlDraw.ends ();
-            Gl.disable `depth_test;
-            GlDraw.begins `points;
-            List.iter (fun { Point3.x; y; z } -> GlDraw.vertex3 (x, y, z)) p3d;
-            GlDraw.ends ();
-            leave3d ();
-            GlList.ends ();
-            gl := Some list
+          (* on stocke les ordres graphiques dans une "display_list" opengl *)
+          let list = Gl.gen_lists 1 in
+          Gl.new_list list Gl.COMPILE_AND_EXECUTE;
+          Gl.gl_begin Gl.line_strip;
+          List.iter (fun { Point3.x; y; z } -> vertex3 (x, y, z)) p3d;
+          Gl.gl_end ();
+          Gl.disable Gl.depth_test;
+          Gl.gl_begin Gl.points;
+          List.iter (fun { Point3.x; y; z } -> vertex3 (x, y, z)) p3d;
+          Gl.gl_end ();
+          leave3d ();
+          Gl.end_list ();
+          gl := Some list
       end
     | FIG ->
-        let draw () = draw_curve3d ~dev:GL gl plot_func p3d (p1, p2) in
-        gl2fig draw plot_func
+      let draw () = draw_curve3d ~dev:GL gl plot_func p3d (p1, p2) in
+      gl2fig draw plot_func
 
   let draw_segments pl ?(dev = !default_device) ?dep view =
     let ps = rescale_list pl view (bounding_box dev) in
@@ -1486,9 +1445,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
               in
               pair ps))
     | GL ->
-        GlDraw.begins `lines;
-        List.iter GlDraw.vertex2 ps;
-        GlDraw.ends ()
+        Gl.gl_begin Gl.lines;
+        List.iter (fun (x,y) -> Gl.vertex2f x y) ps;
+        Gl.gl_end ()
     | FIG ->
         let depth = get_depth dep and co = fig_of_color !current_color in
         (* à modifier *)
@@ -1510,72 +1469,71 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
            pair ps)
 
   let draw_text ?(dev = !default_device) ?dep view t =
-    Debug.print "draw_text [%s]" t.text;
     let x0, y0 = draw_of_point t.pos view (bounding_box dev) in
     match dev with
     | X11 ->
-        Graphics.set_text_size (iscale t.size);
-        (* la size n'est pas prise en compte sous X11 ?? *)
-        (* en remplacement: *)
-        (* or use an "association list" (size,font) *)
-        let size = max 6 (min 40 (iscale t.size) land 62) in
-        let font_desc =
-          Printf.sprintf "-*-fixed-*-r-*-*-%d-*-*-*-*-*-iso8859-*" size
-        in
-        let () =
-          try Graphics.set_font font_desc
-          with _ ->
-            Debug.print "Cannot find font: %s" font_desc;
-            Graphics.set_font "fixed"
-        in
-        let w, h = Graphics.text_size t.text in
-        let dx =
-          match t.align with CENTER -> w / 2 | LEFT -> 0 | RIGHT -> w
-        in
-        Graphics.moveto (int_of_float x0 - dx) (int_of_float y0 - (h / 2));
-        Graphics.draw_string t.text
+      Graphics.set_text_size (iscale t.size);
+      (* la size n'est pas prise en compte sous X11 ?? *)
+      (* en remplacement: *)
+      (* or use an "association list" (size,font) *)
+      let size = max 6 (min 40 (iscale t.size) land 62) in
+      let font_desc =
+        Printf.sprintf "-*-fixed-*-r-*-*-%d-*-*-*-*-*-iso8859-*" size
+      in
+      let () =
+        try Graphics.set_font font_desc
+        with _ ->
+          Debug.print "Cannot find font: %s" font_desc;
+          Graphics.set_font "fixed"
+      in
+      let w, h = Graphics.text_size t.text in
+      let dx =
+        match t.align with CENTER -> w / 2 | LEFT -> 0 | RIGHT -> w
+      in
+      Graphics.moveto (int_of_float x0 - dx) (int_of_float y0 - (h / 2));
+      Graphics.draw_string t.text
     | GL ->
-        let image, w, h =
-          match t.pix with
-          | Some (pix, w, h) when not !force_refresh ->
-            Debug.print "use old pix"; (pix, w, h)
-          (* : on ne calcule l'image qu'une fois ! *)
-          | _ ->
-              let pix = text_image t.text (iscale t.size) t.flag in
-              t.pix <- Some pix;
-              pix
-        in
-        let dw, dh = draw_of_pixel (w, h) (bounding_box dev) in
-        let dx =
-          match t.align with CENTER -> dw /. 2. | LEFT -> 0. | RIGHT -> dw
-        in
-        GlMisc.pass_through text_token;
-        draw_image image (x0 -. dx) (y0 -. (dh /. 2.)) ~mode:(`mode `modulate)
+      let s =
+        match t.pix with
+        | Some surf when not !force_refresh -> surf
+        (* : on ne calcule l'image qu'une fois ! *)
+        | _ ->
+          let pix = text_image t.text (iscale t.size) t.flag in
+          t.pix <- Some pix;
+          pix
+      in
+      let w, h = Sdl.get_surface_size s in
+      let dw, dh = draw_of_pixel (w, h) (bounding_box dev) in
+      let dx =
+        match t.align with CENTER -> dw /. 2. | LEFT -> 0. | RIGHT -> dw
+      in
+      Gl.Feedback.pass_through text_token;
+      draw_image s (x0 -. dx) (y0 -. (dh /. 2.)) ~mode:(Gl.modulate)
     | FIG ->
-        let _, h =
-          ( 315,
-            int_of_float
-              ((match t.flag with Normal -> 8.1 | Latex -> 6.)
-               (* à ajuster...*)
-              *. float t.size (* |> scale *)) )
-        (* 315 a modifier, ca pose pb pour fig2dev (pas xfig)
-           lorsqu'il n'y a qu'un texte: la bounding box eps est
-           calculée en fonction de ça ! *)
-        and depth = get_depth dep
-        and co = fig_of_color !current_color in
-        let fig_align =
-          match t.align with CENTER -> 1 | LEFT -> 0 | RIGHT -> 2
-        in
-        Printf.fprintf
-          !xfig_main_channel (*modifier taille et le flag special ?*)
-          "4 %d %d %d -1 %d %f 0.0000 %d 180 315 %d %d %s\\001\n" fig_align co
-          depth
-          (match t.flag with Normal -> 16 | Latex -> 0)
-          (float t.size *. 0.75 (* |> scale *)) (* facteur correctif *)
-          (match t.flag with Normal -> 4 | Latex -> 2)
-          (int_of_float x0)
-          (int_of_float y0 + (h / 2))
-          (String.escaped t.text)
+      let _, h =
+        ( 315,
+          int_of_float
+            ((match t.flag with Normal -> 8.1 | Latex -> 6.)
+             (* à ajuster...*)
+             *. float t.size (* |> scale *)) )
+      (* 315 a modifier, ca pose pb pour fig2dev (pas xfig)
+         lorsqu'il n'y a qu'un texte: la bounding box eps est
+         calculée en fonction de ça ! *)
+      and depth = get_depth dep
+      and co = fig_of_color !current_color in
+      let fig_align =
+        match t.align with CENTER -> 1 | LEFT -> 0 | RIGHT -> 2
+      in
+      Printf.fprintf
+        !xfig_main_channel (*modifier taille et le flag special ?*)
+        "4 %d %d %d -1 %d %f 0.0000 %d 180 315 %d %d %s\\001\n" fig_align co
+        depth
+        (match t.flag with Normal -> 16 | Latex -> 0)
+        (float t.size *. 0.75 (* |> scale *)) (* facteur correctif *)
+        (match t.flag with Normal -> 4 | Latex -> 2)
+        (int_of_float x0)
+        (int_of_float y0 + (h / 2))
+        (String.escaped t.text)
   (* conversion des sequences \.. *)
 
   (* axes (décorés) passant par le point donné *)
@@ -1590,7 +1548,6 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* rem: on autorise les axes en dehors de la figure. Ca peut permettre
      de ne voir qu'un axe sur les deux si on veut. Mais pb pour eps ! *)
   let draw_axis a ?(dev = !default_device) view =
-    Debug.print "draw_axis";
     let view_has_changed =
       !force_refresh
       ||
@@ -1735,8 +1692,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     in
     draw_segments axis_segments view ~dev;
     incr counter;
-    List.iter (draw_text view ~dev) text_labels;
-    Debug.print "Done draw_axis"
+    List.iter (draw_text view ~dev) text_labels
   (*   List.iter (draw_text view ~dev) l_vnum;;*)
 
   (********************************************************************)
@@ -1750,7 +1706,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   (* modifie la position 3d. Rotation autour de l'axe y puis axe x *)
   let rotate3d ax ay =
-    let ry = Geom.q_rotation 0. 1. 0. ay and rx = Geom.q_rotation 0. 0. 1. ax in
+    let ry = Geom.q_rotation 0. 1. 0. (-. ay)
+    and rx = Geom.q_rotation 0. 0. 1. (-. ax) in
     position3d := Geom.q_mult ry (Geom.q_mult rx !position3d)
 
   let mincr z = z := !z *. 1.01
@@ -1802,34 +1759,34 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | k when k = Sdl.K.question || k = Sdl.K.h -> print_help ()
     | k when k = Sdl.K.left && modifier land Sdl.Kmod.ctrl <> 0 ->
         rotate3d 0. (-0.02)
-    | k when k = Sdl.K.left -> GlMat.rotate ~angle:1. ~z:1. ()
+    | k when k = Sdl.K.left -> gl_rotated2d 1.
     | k when k = Sdl.K.right && modifier land Sdl.Kmod.ctrl <> 0 ->
         rotate3d 0. 0.02
-    | k when k = Sdl.K.right -> GlMat.rotate ~angle:(-1.) ~z:1. ()
+    | k when k = Sdl.K.right -> gl_rotated2d (-1.)
     | k when k = Sdl.K.up && modifier land Sdl.Kmod.ctrl <> 0 ->
         rotate3d (-0.02) 0.
-    | k when k = Sdl.K.up -> GlMat.rotate ~angle:(-1.) ~x:1. ()
+    | k when k = Sdl.K.up -> Gl.rotated (-1.) 1. 0. 0.;
     | k when k = Sdl.K.down && modifier land Sdl.Kmod.ctrl <> 0 ->
         rotate3d 0.02 0.
-    | k when k = Sdl.K.down -> GlMat.rotate ~angle:1. ~x:1. ()
+    | k when k = Sdl.K.down -> Gl.rotated 1. 1. 0. 0.;
     | k
       when k = Sdl.K.equals
            && modifier land Sdl.Kmod.shift <> 0
            && modifier land Sdl.Kmod.ctrl <> 0 ->
         mincr zoom3d
     | k when k = Sdl.K.equals && modifier land Sdl.Kmod.shift <> 0 ->
-        GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 ()
+        Gl.scalef 1.1 1.1 1.1;
     | k when k = Sdl.K.plus ->
-        GlMat.scale ~x:1.1 ~y:1.1 ~z:1.1 () (* utiliser plutot la caméra?*)
+        Gl.scalef 1.1 1.1 1.1; (* utiliser plutot la caméra?*)
     | k when k = Sdl.K.equals && modifier land Sdl.Kmod.ctrl <> 0 ->
         mdecr zoom3d
-    | k when k = Sdl.K.equals -> GlMat.scale ~x:0.91 ~y:0.91 ~z:0.91 ()
+    | k when k = Sdl.K.equals -> Gl.scalef 0.91 0.91 0.91;
     | k when k = Sdl.K.tab && modifier land Sdl.Kmod.ctrl <> 0 ->
         position3d := default_position3d;
         zoom3d := default_zoom3d
     | k when k = Sdl.K.tab ->
-        GlMat.pop ();
-        GlMat.push ();
+        Gl.pop_matrix ();
+        Gl.push_matrix ();
         reset_time ()
     | k when k = Sdl.K.l && modifier land Sdl.Kmod.ctrl <> 0 ->
         light_on := not !light_on;
@@ -1848,9 +1805,6 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         (* for debug only *)
         quit := true
     | k when k = Sdl.K.s && modifier land Sdl.Kmod.ctrl <> 0 ->
-        (* Sdlvideo.save_BMP (Sdlvideo.get_video_surface ())
-           bmp_output; *)
-        (* ne marche pas. voir le fichier sdl-opengl *)
         sdl_screenshot ()
     | _
       when Sdl.get_mod_state () = 0
@@ -2014,8 +1968,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | X11 -> Graphics.clear_graph ()
     (* la couleur est ignorée *)
     | GL ->
-        GlClear.color (float_of_color c);
-        GlClear.clear [ `color ]
+      gl_clear_color c;
+      Gl3.clear Gl3.color;
     | FIG -> raise (Not_implemented "FIG clear")
 
   let exec_user f view dev =
@@ -2083,14 +2037,14 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
           first_time := Some (time ());
           Debug.print "Initialisation"
       | Some t0 when time () < t0 + t ->
-          GlMat.scale ~x:0.91 ~y:0.91 ();
+        Gl.scalef 0.91 0.91 0.;
           do_pause 0
       | _ ->
           first_time := None;
           resume_pause := true;
           if pop then (
-            GlMat.pop ();
-            GlMat.push ())
+            Gl.pop_matrix ();
+            Gl.push_matrix ())
     in
     foo
 
@@ -2102,14 +2056,14 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
           first_time := Some (time ());
           Debug.print "Initialisation"
       | Some t0 when time () < t0 + t ->
-          GlMat.scale ~x:1.1 ~y:1.1 ();
+        Gl.scalef 1.1 1.1 0.;
           do_pause 0
       | _ ->
           first_time := None;
           resume_pause := true;
           if pop then (
-            GlMat.pop ();
-            GlMat.push ())
+            Gl.pop_matrix ();
+            Gl.push_matrix ())
     in
     foo
 
@@ -2230,8 +2184,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       frames := 0;
       ot := t
     end;
-    GlClear.clear [ `color; `depth ];
-    GlDraw.color (float_of_color default_color);
+    Gl3.clear (Gl3.color_buffer_bit lor Gl3.depth_buffer_bit);
+    gl_draw_color default_color;
     current_color := default_color;
     counter := 0;
     start_time := time ();
@@ -2256,8 +2210,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* boucle principale interactive GTK/GL pour afficher la feuille sh
      (c'est GTK qui s'occupe de boucler). On retourne le temps mis pour tracer *)
   let gtk_mainloop sh =
-    GlClear.clear [ `color; `depth ];
-    GlDraw.color (float_of_color default_color);
+    Gl3.clear (Gl3.color_buffer_bit lor Gl3.depth_buffer_bit);
+    gl_draw_color default_color;
     current_color := default_color;
     reset_view3 ();
     counter := 0;
@@ -2360,8 +2314,8 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 *)
   let write_bmp ?(output = png_output) sh =
     gl_init ~show:false ();
-    GlClear.clear [ `color ];
-    GlDraw.color (float_of_color default_color);
+    Gl3.clear Gl3.color_buffer_bit;
+    gl_draw_color default_color;
     (*Gl.finish ();*)
     current_color := default_color;
     counter := 0;
@@ -2388,9 +2342,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         let wait = not (has_anim sh) in
         (* TODO:  `line_smooth n'a pas d'effet pour GTK?: *)
         if wait then (
-          Gl.enable `line_smooth;
-          GlMisc.hint `line_smooth `nicest)
-        else GlMisc.hint `line_smooth `fastest;
+          Gl3.enable Gl3.line_smooth;
+          Gl3.hint Gl3.line_smooth Gl3.nicest)
+        else Gl3.hint Gl3.line_smooth Gl3.fastest;
         resume_pause := false;
         pause_pass := 0;
         interrupt_request := false;
@@ -2401,7 +2355,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
         | SDL ->
             if fscreen <> !fullscreen then toggle_fullscreen ();
             reset_time ();
-            GlClear.clear [ `color; `depth ];
+            Gl3.clear (Gl3.color_buffer_bit lor Gl3.depth_buffer_bit);
             do_option !win Sdl.gl_swap_window;
             sdl_mouse_close ();
             sdl_mainloop sh wait

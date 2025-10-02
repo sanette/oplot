@@ -26,7 +26,7 @@ module Main = Make.Make (Make_graphics.Dummy)
 
 (* The initial modules are grouped and re-split into two main modules: Plt for
    all usual functions and Internal for specific needs like goplot. TODO split
-   this from scratch. *)
+   this from stracth. *)
 
 (* module type PltS = Make_plt.S *)
 

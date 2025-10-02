@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Oplot (oplot.Oplot)</title><link rel="stylesheet" href="../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.2.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../index.html">oplot</a> &#x00BB; Oplot</nav><header class="odoc-preamble"><h1>Module <code><span>Oplot</span></code></h1><p>Simple mathematical plotter library for <code>ocaml</code> with fast graphics (opengl), LaTeX display, and high quality vector output (xfig, postscript or PDF)</p><p><img src="gamma.png" class="oplot" alt="oplot example"><img src="surf3d.png" class="oplot" alt="oplot example"></p><p>Source available on <a href="https://github.com/sanette/oplot">github</a>.</p><ul class="at-tags"><li class="version"><span class="at-tag">version</span> 0.71</li></ul><ul class="at-tags"><li class="author"><span class="at-tag">author</span> San Vũ Ngọc</li></ul></header><nav class="odoc-toc"><ul><li><a href="#example">Example</a></li><li><a href="#main-oplot-functions">Main Oplot functions</a></li></ul></nav><div class="odoc-content"><h2 id="example"><a href="#example" class="anchor"></a>Example</h2><p><code>Oplot</code> can be used in the toplevel. First load the library with</p><pre class="language-ocaml"><code>#use &quot;topfind&quot;
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Oplot (oplot.Oplot)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../odoc.support/odoc.css"/><meta name="generator" content="odoc 3.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">Index</a> &#x00BB; <a href="../index.html">oplot</a> &#x00BB; Oplot</nav><header class="odoc-preamble"><h1>Module <code><span>Oplot</span></code></h1><p>Simple mathematical plotter library for <code>ocaml</code> with fast graphics (opengl), LaTeX display, and high quality vector output (xfig, postscript or PDF)</p><p><img src="gamma.png" class="oplot" alt="oplot example"><img src="surf3d.png" class="oplot" alt="oplot example"></p><p>Source available on <a href="https://github.com/sanette/oplot">github</a>.</p><ul class="at-tags"><li class="version"><span class="at-tag">version</span> %%VERSION%%</li></ul><ul class="at-tags"><li class="author"><span class="at-tag">author</span> San Vũ Ngọc</li></ul></header><div class="odoc-tocs"><nav class="odoc-toc odoc-local-toc"><ul><li><a href="#example">Example</a></li><li><a href="#main-oplot-functions">Main Oplot functions</a></li></ul></nav></div><div class="odoc-content"><h2 id="example"><a href="#example" class="anchor"></a>Example</h2><p><code>Oplot</code> can be used in the toplevel. First load the library with</p><pre class="language-ocaml"><code>  #use &quot;topfind&quot;
 
-#thread
+  #thread
 
-#require &quot;oplot&quot;</code></pre><p>You may open the <a href="Plt/index.html"><code>Oplot.Plt</code></a> module for easy access to all plot functions.</p><pre class="language-ocaml"><code>open Oplot.Plt</code></pre><p>Draw the graph of the <code>sine</code> function with</p><pre class="language-ocaml"><code>let p = plot sin (-2.) 20.
-let a = axis 0. 0.;;
+  #require &quot;oplot&quot;</code></pre><p>You may open the <a href="Plt/index.html"><code>Oplot.Plt</code></a> module for easy access to all plot functions.</p><pre class="language-ocaml"><code>  open Oplot.Plt</code></pre><p>Draw the graph of the <code>sine</code> function with</p><pre class="language-ocaml"><code>  let p = plot sin (-2.) 20.
+  let a = axis 0. 0.;;
 
-display [ Color red; p; Color black; a ]</code></pre><p>This will open a window with the graphics, which should look like this:</p><img src="example.png" class="oplot" alt="oplot example"><p>Press <code>F</code> for fullscreen toggle, <code>CTRL-S</code> for saving the image, and <code>ESC</code> or <code>Q</code> to close the window. Press <code>h</code> to see the list of active keys.</p><p>Of course you can play with it:</p><pre class="language-ocaml"><code>let rec sh i =
-  if i == 0 then []
-  else
-    let p =
-      line_plot_f
-        (fun x -&gt; sin (x +. (float_of_int i /. 50.)))
-        0. 20. ~step:0.05
-    in
-    let c =
-      color (float_of_int i /. 50.) (1. -. (float_of_int i /. 50.)) 0.
-    in
-    c :: p :: sh (i - 1)
-;;
+  display [ Color red; p; Color black; a ]</code></pre><p>This will open a window with the graphics, which should look like this:</p><img src="example.png" class="oplot" alt="oplot example"><p>Press <code>F</code> for fullscreen toggle, <code>CTRL-S</code> for saving the image, and <code>ESC</code> or <code>Q</code> to close the window. Press <code>h</code> to see the list of active keys.</p><p>Of course you can play with it:</p><pre class="language-ocaml"><code>  let rec sh i =
+    if i == 0 then []
+    else
+      let p =
+        line_plot_f
+          (fun x -&gt; sin (x +. (float_of_int i /. 50.)))
+          0. 20. ~step:0.05
+      in
+      let c =
+        color (float_of_int i /. 50.) (1. -. (float_of_int i /. 50.)) 0.
+      in
+      c :: p :: sh (i - 1)
+  ;;
 
-display (sh 50)</code></pre><img src="example2.png" class="oplot" alt="oplot example"><div class="odoc-spec"><div class="spec module anchored" id="module-Points"><a href="#module-Points" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Points/index.html">Points</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><p>Types of points</p><h2 id="main-oplot-functions"><a href="#main-oplot-functions" class="anchor"></a>Main Oplot functions</h2><p>This module contains all plotting functions.</p><div class="odoc-spec"><div class="spec module anchored" id="module-Plt"><a href="#module-Plt" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Plt/index.html">Plt</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div></div></body></html>
+  display (sh 50)</code></pre><img src="example2.png" class="oplot" alt="oplot example"><div class="odoc-spec"><div class="spec module anchored" id="module-Points"><a href="#module-Points" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Points/index.html">Points</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><p>Types of points</p><h2 id="main-oplot-functions"><a href="#main-oplot-functions" class="anchor"></a>Main Oplot functions</h2><p>This module contains all plotting functions.</p><div class="odoc-spec"><div class="spec module anchored" id="module-Plt"><a href="#module-Plt" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Plt/index.html">Plt</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div></div></body></html>

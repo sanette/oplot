@@ -1,6 +1,8 @@
 (* Common definitions of types for Oplot. San Vu Ngoc. *)
 
 open Points
+open Tsdl
+module Gl = Gl_legacy
 
 (* sorties graphiques de base implémentées par le programme *)
 type plot_device = X11 | GL | FIG
@@ -15,7 +17,7 @@ type view3 = point3 * point3
 (* gérer aussi la couleur comme les view ou attachée à chaque objet ? *)
 
 type color = { r : float; g : float; b : float }
-type text_image = ([ `rgba ], [ `ubyte ]) GlPix.t * int * int
+type text_image = Sdl.surface
 (* (image + dimensions de la partie intéressante) *)
 
 type align = CENTER | LEFT | RIGHT
@@ -50,7 +52,7 @@ type surf3d = fmatrix * fmatrix * fmatrix * view3 * bool
 (* 3D: utiliser GlArray.vertex dans la display list pour optimiser l'affichage ? *)
 
 type curve3d = point3 list * view3
-type gllist = GlList.t option ref
+type gllist = Gl.display_list option ref
 
 type motion3d =
   | Translate of point3
@@ -58,7 +60,7 @@ type motion3d =
   | Zoom of ((float -> float) * float option)
 
 type move3d = { move : motion3d; time : mrange; mutable init_time : int option }
-type image = ([ `rgba ], [ `ubyte ]) GlPix.t * int * int
+type image = Sdl.surface
 
 type latex = {
   lpos : point;

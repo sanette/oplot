@@ -1,4 +1,4 @@
 (library
  (name oplot)
  (public_name oplot)
- (libraries graphics bigarray tsdl tsdl-image tsdl-ttf lablgl))
+ (libraries bigarray tsdl tsdl-image tsdl-ttf tgls.tgl3 gl-legacy))

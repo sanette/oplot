@@ -123,7 +123,7 @@ let q_axis (q1, q2, q3, q4) =
   let n = sqrt ((q1 *. q1) +. (q2 *. q2) +. (q3 *. q3)) in
   if n = 0. then (0., 0., 1., 0.) else (q1 /. n, q2 /. n, q3 /. n, 2. *. acos q4)
 
-(* matrice dans SO3 *)
+(* matrice dans SO3 - par lignes *)
 let q_matrix (q1, q2, q3, q4) =
   [|
     [|
@@ -146,3 +146,25 @@ let q_matrix (q1, q2, q3, q4) =
     |];
     [| 0.; 0.; 0.; 1. |];
   |]
+
+(* par colonnes *)
+let q_matrix_ba  (q1, q2, q3, q4) = let open Bigarray in
+  Array1.of_array float32 c_layout
+    [|
+      1. -. (2. *. ((q3 *. q3) +. (q4 *. q4)));
+      2. *. ((q2 *. q3) +. (q1 *. q4));
+      2. *. ((q2 *. q4) -. (q1 *. q3));
+      0.;
+
+      2. *. ((q2 *. q3) -. (q1 *. q4));
+      1. -. (2. *. ((q2 *. q2) +. (q4 *. q4)));
+      2. *. ((q1 *. q2) +. (q3 *. q4));
+      0.;
+
+      2. *. ((q1 *. q3) +. (q2 *. q4));
+      2. *. ((q3 *. q4) -. (q1 *. q2));
+      1. -. (2. *. ((q2 *. q2) +. (q3 *. q3)));
+      0.;
+
+      0.; 0.; 0.; 1.
+    |];

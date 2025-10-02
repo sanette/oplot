@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.71
+    @version %%VERSION%%
     @author San Vũ Ngọc *)
 
 (** {1 Example}
@@ -429,8 +429,6 @@ module Plt : sig
     val gl_mouse_motion : int -> int -> unit
     val interrupt : unit -> unit
     val latex_to_sdl : string -> int -> Tsdl.Sdl.surface
-    val sdl_make_surface : unit -> Tsdl.Sdl.surface
-    val sdl_screenshot : ?output:string -> unit -> unit
 
     exception Shell_error of (int * string)
 

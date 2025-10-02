@@ -1,3 +1,7 @@
+# 0.80 -- 2025/09/27
+
+* getting rid of lablgl; we use tgsl ang gl-legacy instead
+
 # 0.71 -- 2022/01/09
 
 * back to old version scheme. Opam was confused!

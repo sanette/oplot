@@ -10,6 +10,7 @@
    modules? *)
 
 open Points
+open Tsdl
 
 type plot_device = X11 | GL | FIG
 type view = point * point
@@ -17,7 +18,7 @@ type view3 = point3 * point3
 type points = point list
 type align = CENTER | LEFT | RIGHT
 type text_flag = Normal | Latex
-type text_image = ([ `rgba ], [ `ubyte ]) GlPix.t * int * int
+type text_image = Sdl.surface
 
 (* (image + dimensions de la partie intéressante) *)
 type text = {
@@ -51,7 +52,7 @@ type motion3d =
 
 type mrange = { mutable min : float; mutable max : float }
 type move3d = { move : motion3d; time : mrange; mutable init_time : int option }
-type gllist = GlList.t option ref
+type gllist = Gl_legacy.display_list option ref
 type color = { r : float; g : float; b : float }
 
 type plot_object =
