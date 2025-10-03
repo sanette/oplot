@@ -42,9 +42,20 @@ An official standalone GUI for `oplot`:
 The `top` directory contains examples that can be run from the ocaml
 toplevel. See the [README](top/README.md) file.
 
-## Dependencies
+## Install v 0.80
 
-* `oplot` requires `lablgl`. If you have any trouble with this, try [this one.](https://github.com/sanette/lablgl-lib/tree/master?tab=readme-ov-file#how-to-use-this-one-instead-of-the-original-lablgl):
+The current version does not require `lablgl`, but instead you should install `tgls` and `gl-legacy`:
+
+
+```bash
+opam install tgls
+opam pin https://github.com/sanette/gl-legacy
+opam pin https://github.com/sanette/oplot
+```
+
+## Install v 0.72
+
+* `oplot<0.80` requires `lablgl`. If you have any trouble with this, try [this one.](https://github.com/sanette/lablgl-lib/tree/master?tab=readme-ov-file#how-to-use-this-one-instead-of-the-original-lablgl):
 
 ```
 opam pin add https://github.com/sanette/lablgl-lib.git
