@@ -264,7 +264,7 @@ module Plt : sig
     plot_object
   (** [surf3d_plot fx fy fz u0 v0 u1 v1] computes the parametric surface spanned
       by the map (u,v)->(fx(u,v), fy(u,v), fz(u,v)) when (u,v) varies in the
-      range [\[u0,u1\] ✕ \[v0,v1\]]. *)
+      range [[u0,u1] ✕ [v0,v1]]. *)
 
   val grid_plot :
     (float -> float -> float) ->
@@ -277,7 +277,7 @@ module Plt : sig
     float ->
     plot_object
   (** [grid_plot f x0 y0 x1 y1] computes the graph of the function [f] of two
-      variables x y, when (x,y) varies in the range [\[x0,x1\] ✕ \[y0,y1\]]. *)
+      variables x y, when (x,y) varies in the range [[x0,x1] ✕ [y0,y1]]. *)
 
   (** {3 Other objects} *)
 
