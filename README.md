@@ -60,7 +60,7 @@ opam pin https://github.com/sanette/oplot
 ```
 opam pin add https://github.com/sanette/lablgl-lib.git
 opam install lablgl.1.07-lib
-
+opam install oplot.0.72
 ```
 
 ## Requirements
