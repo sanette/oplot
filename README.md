@@ -49,8 +49,8 @@ The current version does not require `lablgl`, but instead you should install `t
 
 ```bash
 opam install tgls
-opam pin https://github.com/sanette/gl-legacy
-opam pin https://github.com/sanette/oplot
+opam pin https://github.com/sanette/gl-legacy.git
+opam pin https://github.com/sanette/oplot.git
 ```
 
 ## Install v 0.72
