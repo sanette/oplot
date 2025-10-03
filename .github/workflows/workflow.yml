@@ -16,7 +16,6 @@ jobs:
         ocaml-compiler:
           - 5.03.x
           - 4.13.x
-          - 4.08.x
 
     runs-on: ${{ matrix.os }}
 
@@ -25,10 +24,10 @@ jobs:
         run: sudo apt-get update -y
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
@@ -46,13 +45,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
-      - name: Use OCaml 4.13.x
-        uses: ocaml/setup-ocaml@v2
+      - name: Use OCaml 5
+        uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 4.13.x
+          ocaml-compiler: 5
           dune-cache: true
 
       - name: Lint fmt
-        uses: ocaml/setup-ocaml/lint-fmt@v2
+        uses: ocaml/setup-ocaml/lint-fmt@v3
