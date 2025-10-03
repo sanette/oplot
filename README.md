@@ -63,6 +63,8 @@ opam install lablgl.1.07-lib
 
 ```
 
+## Requirements
+
 * For PDF output you need to install the `fig2dev` system package.
 
 * For LaTeX display you need a working LaTeX installation; for
