@@ -1,4 +1,4 @@
-(lang dune 3.6)
+(lang dune 3.15)
 (name oplot)
 (version "0.81")
 (generate_opam_files true)
