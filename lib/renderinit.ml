@@ -241,8 +241,8 @@ let get_pixel_height_from_xrandr () =
   try
     line
     |> map_option (fun res ->
-           let i = String.index res 'x' in
-           String.sub res (i + 1) (String.length res - i - 1) |> int_of_string)
+        let i = String.index res 'x' in
+        String.sub res (i + 1) (String.length res - i - 1) |> int_of_string)
   with _ ->
     Debug.print
       "get_pixel_height_from_xrandr: cannot parse output of xrandr (%s)"
@@ -256,8 +256,8 @@ let get_device_height_from_xrandr () =
   try
     line
     |> map_option (fun res ->
-           let i = String.index res 'm' in
-           String.sub res 0 i |> int_of_string)
+        let i = String.index res 'm' in
+        String.sub res 0 i |> int_of_string)
   with _ ->
     Debug.print
       "get_device_height_from_xrandr: cannot parse output of xrandr (%s)"
@@ -279,8 +279,8 @@ let get_dpi_from_xdpyinfo () =
   try
     line
     |> map_option (fun res ->
-           let i = String.index res 'x' in
-           int_of_string (String.sub res 0 i))
+        let i = String.index res 'x' in
+        int_of_string (String.sub res 0 i))
   with _ ->
     Debug.print "get_dpi_from_xdpyinfo: cannot parse output of xpdyinfo (%s)"
       (match line with None -> "none" | Some s -> s);

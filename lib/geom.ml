@@ -67,7 +67,7 @@ let inter_box s (p1, p2) =
 (* - : point = {x = 0.333333333333333315; y = 1.} *)
 (************)
 
-Random.self_init ()
+Random.self_init ();;
 
 let deriv f x =
   let dx = 0.000001 in

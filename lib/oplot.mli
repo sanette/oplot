@@ -138,9 +138,9 @@ module Plt : sig
         (view option * plot_object option) ref * (view option -> plot_object)
         (** Any object that needs to adapt itself to the current View. *)
     | User of (view -> plot_device -> unit)
-    (** Execute any user-defined program. *)
+        (** Execute any user-defined program. *)
     | UserAnim of (view -> plot_device -> unit)
-    (** Repeatedly execute any user-defined program. *)
+        (** Repeatedly execute any user-defined program. *)
     | Sheet of plot_object list  (** Group plot objects. *)
 
   (** {3 2D objects}
@@ -280,7 +280,7 @@ module Plt : sig
   (** Set line width for subsequent drawings. *)
 
   val text_color : color -> plot_object
-    (** Set text color for subsequent drawings. *)
+  (** Set text color for subsequent drawings. *)
 
   val freeze : int -> plot_object
   (** [freeze t] creates a {!Freeze} for [t] ms. *)
@@ -438,7 +438,6 @@ module Plt : sig
     val pngalpha : unit -> bool
     val has_fig2dev : bool
   end
-
 end
 
 (*

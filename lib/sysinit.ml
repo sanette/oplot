@@ -1,4 +1,4 @@
-Debug.print "* Loading sysinit"
+Debug.print "* Loading sysinit";;
 
 (* System inits *)
 (* This will also initialize SDL for loading the font *)

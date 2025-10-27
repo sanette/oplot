@@ -1,4 +1,4 @@
-Debug.print "* Loading oplotmain"
+Debug.print "* Loading oplotmain";;
 
 (*** à faire: ca serait bien d'utiliser la bibliothèque gl2ps
        pour convertir directement en ps
@@ -114,8 +114,8 @@ let sdl_get_dpi_scale () =
       if (rw, rh) <> (w, h) then begin
         let dpi_xscale = float rw /. float w in
         let dpi_yscale = float rh /. float h in
-        Debug.print "This display imposes a hard scaling of (%f,%f)."
-          dpi_xscale dpi_yscale;
+        Debug.print "This display imposes a hard scaling of (%f,%f)." dpi_xscale
+          dpi_yscale;
         min dpi_xscale dpi_yscale
       end
       else 1.
@@ -448,11 +448,7 @@ let feedback_parse_line r n0 nmax =
   and d = depth_of_vertex v1 +. depth_of_vertex v2
   and p2 = point_of_vertex v2 in
   let pl, depsum, nombre, n =
-    loop
-      (n0 + 1 + (2 * gl_vertex_size))
-      p2 c1 d
-      [ p2; point_of_vertex v1 ]
-      d 2
+    loop (n0 + 1 + (2 * gl_vertex_size)) p2 c1 d [ p2; point_of_vertex v1 ] d 2
   in
   ([ Color c1; Lines [ pl ] ], depsum /. float nombre, n)
 
@@ -527,9 +523,7 @@ let pscal (x0, y0, z0) (x1, y1, z1) = (x0 *. x1) +. (y0 *. y1) +. (z0 *. z1)
 let norm r = 1. /. sqrt (pscal r r) *| r
 
 let pvect (x0, y0, z0) (x1, y1, z1) =
-  ( (z0 *. y1) -. (z1 *. y0),
-    (x0 *. z1) -. (x1 *. z0),
-    (y0 *. x1) -. (y1 *. x0) )
+  ((z0 *. y1) -. (z1 *. y0), (x0 *. z1) -. (x1 *. z0), (y0 *. x1) -. (y1 *. x0))
 
 let unit_normal a b c = norm (pvect (c -| b) (a -| b))
 
@@ -643,12 +637,10 @@ let rescale_list pl v (bx0, by0, bx1, by1) =
       end
   | Some ({ x = x0; y = y0 }, { x = x1; y = y1 }) ->
       let xmin, xfactor =
-        if x1 = x0 then (-0.5, bx1 -. bx0)
-        else (x0, (bx1 -. bx0) /. (x1 -. x0))
+        if x1 = x0 then (-0.5, bx1 -. bx0) else (x0, (bx1 -. bx0) /. (x1 -. x0))
       in
       let ymin, yfactor =
-        if y1 = y0 then (-0.5, by1 -. by0)
-        else (y0, (by1 -. by0) /. (y1 -. y0))
+        if y1 = y0 then (-0.5, by1 -. by0) else (y0, (by1 -. by0) /. (y1 -. y0))
       in
       (* on met une largeur de 1 et on centre au cas où la largeur du dessin est
          nulle *)
@@ -714,8 +706,7 @@ let rec maxview po =
   | Grid ((_, v3, _), _) -> view2of3 v3
   | Surf3d ((_, _, _, v3, _), _) -> view2of3 v3
   | Adapt (_, f) -> maxview (f None)
-  | User _
-  | UserAnim _ ->
+  | User _ | UserAnim _ ->
       None
       (* Some (point(-.1., -.1.), point(1.,1.)) *)
       (* mieux que rien ... *)
@@ -826,17 +817,15 @@ let latex_to_sdl message size =
   shell "latex '\\nonstopmode\\input{%s}'" latex_tmp;
   shell "dvips -D 600 %s.dvi -o %s.ps" base_name base_name;
   shell
-    "gs -sDEVICE=pngalpha -dTextAlphaBits=4 -r%d -dGraphicsAlphaBits=4 \
-     -dSafer -q -dNOPAUSE -sOutputFile=%s.png %s.ps -c quit"
+    "gs -sDEVICE=pngalpha -dTextAlphaBits=4 -r%d -dGraphicsAlphaBits=4 -dSafer \
+     -q -dNOPAUSE -sOutputFile=%s.png %s.ps -c quit"
     (* si on n'a pas pngalpha:*)
     (* shell "gs -sDEVICE=ppmraw -dTextAlphaBits=4 -r%d -dGraphicsAlphaBits=4 -dSafer -q -dNOPAUSE -sOutputFile=%s.ppm %s.ps -c quit"  *)
     (* ensuite faire quleque chose comme  *)
     (* convert -transparent white  oplot-tmp.ppm aaa.png *)
     (size * 6)
     base_name base_name;
-  let image =
-    Tsdl_image.Image.load (Printf.sprintf "%s.png" base_name) |> go
-  in
+  let image = Tsdl_image.Image.load (Printf.sprintf "%s.png" base_name) |> go in
   Sys.chdir current_dir;
   if Sdl.get_surface_format_enum image = Sdl.Pixel.format_argb8888 then image
   else Sdl.convert_surface_format image Sdl.Pixel.format_argb8888 |> go
@@ -1067,9 +1056,7 @@ let draw_lines pl ?(dev = !default_device) ?dep view =
   if dev = FIG then (
     (* latex n'aime pas les dimensions trop grandes*)
     let pls =
-      match view with
-      | None -> raise View_expected
-      | Some v -> lines_crop pl v
+      match view with None -> raise View_expected | Some v -> lines_crop pl v
     in
     if Debug.debug && List.length pls > 1 then
       print_endline "Cropping overflowing Lines for FIG rendering";
@@ -1115,49 +1102,47 @@ let draw_matrix ?(dev = !default_device) ?(cmap = from_white_cmap)
   (* w,i=lignes, h,j=colonnes *)
   let dc = float (max_value - min_value) in
   let cmap = cmap !current_color in
-  begin
-    match dev with
-    | X11 -> raise (Not_implemented "X11 draw_matrix")
-    | GL ->
-        let dx = 1. /. float w and dy = 1. /. float h in
-        for i = 0 to h - 1 do
-          for j = 0 to w - 1 do
-            let c = float (m.(i).(j) - min_value) /. dc in
-            let x = float j *. dx and y = float i *. dy in
-            gl_draw_color (cmap c);
-            Gl.gl_begin Gl.quads;
-            Gl.vertex2f x y;
-            Gl.vertex2f x (y +. dy);
-            Gl.vertex2f (x +. dx) (y +. dy);
-            Gl.vertex2f (x +. dx) y;
-            Gl.gl_end ()
-          done
+  begin match dev with
+  | X11 -> raise (Not_implemented "X11 draw_matrix")
+  | GL ->
+      let dx = 1. /. float w and dy = 1. /. float h in
+      for i = 0 to h - 1 do
+        for j = 0 to w - 1 do
+          let c = float (m.(i).(j) - min_value) /. dc in
+          let x = float j *. dx and y = float i *. dy in
+          gl_draw_color (cmap c);
+          Gl.gl_begin Gl.quads;
+          Gl.vertex2f x y;
+          Gl.vertex2f x (y +. dy);
+          Gl.vertex2f (x +. dx) (y +. dy);
+          Gl.vertex2f (x +. dx) y;
+          Gl.gl_end ()
         done
-    | FIG ->
-        let xmin, ymin, xmax, ymax =
-          (0., 0., float w, float h)
-          (* (match view with
-           *  | None -> raise View_expected
-           *  | Some  ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) -> x0,y0,x1,y1) *)
-        in
-        let view = Some ({ x = xmin; y = ymin }, { x = xmax; y = ymax }) in
-        let dx = (xmax -. xmin) /. float w
-        and dy = (ymax -. ymin) /. float h in
-        for i = 0 to h - 1 do
-          for j = 0 to w - 1 do
-            let c = float (m.(i).(j) - min_value) /. dc in
-            let x = xmin +. (float j *. dx) and y = ymin +. (float i *. dy) in
-            set_color ~dev (cmap c);
-            draw_poly ~dev
-              [
-                { x; y };
-                { x; y = y +. dy };
-                { x = x +. dx; y = y +. dy };
-                { x = x +. dx; y };
-              ]
-              view
-          done
+      done
+  | FIG ->
+      let xmin, ymin, xmax, ymax =
+        (0., 0., float w, float h)
+        (* (match view with
+         *  | None -> raise View_expected
+         *  | Some  ( { x=x0 ; y=y0 },{ x=x1 ; y=y1 }) -> x0,y0,x1,y1) *)
+      in
+      let view = Some ({ x = xmin; y = ymin }, { x = xmax; y = ymax }) in
+      let dx = (xmax -. xmin) /. float w and dy = (ymax -. ymin) /. float h in
+      for i = 0 to h - 1 do
+        for j = 0 to w - 1 do
+          let c = float (m.(i).(j) - min_value) /. dc in
+          let x = xmin +. (float j *. dx) and y = ymin +. (float i *. dy) in
+          set_color ~dev (cmap c);
+          draw_poly ~dev
+            [
+              { x; y };
+              { x; y = y +. dy };
+              { x = x +. dx; y = y +. dy };
+              { x = x +. dx; y };
+            ]
+            view
         done
+      done
   end;
   set_color !current_color
 
@@ -1308,8 +1293,8 @@ let rec draw_surf3d ?(dev = !default_device) ?(wire = true) gl plot_func mx my
       gl2fig draw plot_func
 
 (* modifier les coords GL *)
-let rec draw_grid gl ?(dev = !default_device) ?(wire = true) plot_func m
-    (p1, p2) =
+let rec draw_grid gl ?(dev = !default_device) ?(wire = true) plot_func m (p1, p2)
+    =
   let h = Array.length m - 1 and w = Array.length m.(0) - 1 in
   (* w,i=lignes, h,j=colonnes *)
   let { r; g; b } = !current_color in
@@ -1502,9 +1487,7 @@ let draw_text ?(dev = !default_device) ?dep view t =
           Graphics.set_font "fixed"
       in
       let w, h = Graphics.text_size t.text in
-      let dx =
-        match t.align with CENTER -> w / 2 | LEFT -> 0 | RIGHT -> w
-      in
+      let dx = match t.align with CENTER -> w / 2 | LEFT -> 0 | RIGHT -> w in
       Graphics.moveto (int_of_float x0 - dx) (int_of_float y0 - (h / 2));
       Graphics.draw_string t.text
   | GL ->
@@ -1555,9 +1538,7 @@ let draw_text ?(dev = !default_device) ?dep view t =
 let sign x =
   if x > 0. then 1. else if x < 0. then -1. else raise Division_by_zero
 
-let is_finite x =
-  classify_float x <> FP_infinite && classify_float x <> FP_nan
-
+let is_finite x = classify_float x <> FP_infinite && classify_float x <> FP_nan
 let is_nan x = not (is_finite x)
 
 (* rem: on autorise les axes en dehors de la figure. Ca peut permettre
@@ -1582,8 +1563,7 @@ let draw_axis a ?(dev = !default_device) view =
       in
       if is_nan x0 || is_nan y0 || is_nan x1 || is_nan y1 then (
         Printf.sprintf
-          "ERROR: cannot draw axis with infinite view (%f,%f,%f,%f)" x0 y0 x1
-          y1
+          "ERROR: cannot draw axis with infinite view (%f,%f,%f,%f)" x0 y0 x1 y1
         |> print_endline;
         ([], []))
       else
@@ -1712,10 +1692,10 @@ let draw_axis a ?(dev = !default_device) view =
 
 (********************************************************************)
 
-let line_width x =
-  User (fun _ dev -> set_line_width ~dev (!gl_scale *. x))
+let line_width x = User (fun _ dev -> set_line_width ~dev (!gl_scale *. x))
 
-let text_color c = (* ne marche pas ! TODO use device *)
+let text_color c =
+  (* ne marche pas ! TODO use device *)
   User (fun _ _ -> text_color := c)
 (********************************************************************)
 
@@ -1800,8 +1780,7 @@ let sdl_key key =
       Gl.scalef 1.1 1.1 1.1
   | k when k = Sdl.K.plus -> Gl.scalef 1.1 1.1 1.1
   (* utiliser plutot la caméra?*)
-  | k when k = Sdl.K.equals && modifier land Sdl.Kmod.ctrl <> 0 ->
-      mdecr zoom3d
+  | k when k = Sdl.K.equals && modifier land Sdl.Kmod.ctrl <> 0 -> mdecr zoom3d
   | k when k = Sdl.K.equals -> Gl.scalef 0.91 0.91 0.91
   | k when k = Sdl.K.tab && modifier land Sdl.Kmod.ctrl <> 0 ->
       position3d := default_position3d;
@@ -1826,8 +1805,7 @@ let sdl_key key =
       Debug.print "Suspended";
       (* for debug only *)
       quit := true
-  | k when k = Sdl.K.s && modifier land Sdl.Kmod.ctrl <> 0 ->
-      sdl_screenshot ()
+  | k when k = Sdl.K.s && modifier land Sdl.Kmod.ctrl <> 0 -> sdl_screenshot ()
   | _
     when Sdl.get_mod_state () = 0
          (* on reste en pause en cas d'appui sur un
@@ -1854,9 +1832,7 @@ let sdl_mouse_init mouse =
   if Sdl.Event.(get mouse mouse_button_button) = Sdl.Button.left then begin
     Sdl.set_event_state Sdl.Event.mouse_motion Sdl.enable;
     Sdl.set_event_state Sdl.Event.mouse_button_up Sdl.enable;
-    let x, y =
-      Sdl.Event.(get mouse mouse_button_x, get mouse mouse_button_y)
-    in
+    let x, y = Sdl.Event.(get mouse mouse_button_x, get mouse mouse_button_y) in
     mouse_x := x;
     mouse_y := !window_height - y
   end
@@ -1882,8 +1858,8 @@ let sdl_resize w h =
   do_option !win (fun win ->
       let rw, rh = Sdl.gl_get_drawable_size win in
       if (rw, rh) <> (wx, hx) then (
-        Debug.print "Obtained: (%i,%i), wanted: (%i,%i). Forcing resize." rw
-          rh wx hx;
+        Debug.print "Obtained: (%i,%i), wanted: (%i,%i). Forcing resize." rw rh
+          wx hx;
         Sdl.set_window_size win ~w ~h));
   (* WARNING this triggers events ?*)
   gl_resize ()
@@ -1904,9 +1880,7 @@ let sdl_event eo =
         | `Window_event -> begin
             match Sdl.Event.(window_event_enum (get e window_event_id)) with
             | `Size_changed ->
-                let w, h =
-                  Sdl.Event.(get e window_data1, get e window_data2)
-                in
+                let w, h = Sdl.Event.(get e window_data1, get e window_data2) in
                 sdl_resize (Int32.to_int w) (Int32.to_int h)
             | `Close ->
                 close ();
@@ -2035,8 +2009,7 @@ let rec object_plot ?(addcounter = true) ~dev po view =
   | Freeze t -> do_freeze t ~dev
   | Clear c -> clear_sheet c ~dev
   | View _ -> ()
-  | UserAnim f
-  | User f -> exec_user f view dev
+  | UserAnim f | User f -> exec_user f view dev
   | Sheet _ ->
       raise (Invalid_argument "object_plot cannot accept Sheet argument")
 
@@ -2091,8 +2064,7 @@ let gl_zoom_in t pop =
   in
   foo
 
-let cleanup dev =
-  set_line_width ~dev !gl_scale
+let cleanup dev = set_line_width ~dev !gl_scale
 (* ETC. TBC**)
 
 (* tracé de tous les objets (un peu merdique). On commence par traiter
@@ -2143,8 +2115,7 @@ let force_refresh () = force_refresh := true
 
 (*********** interfaces graphiques *************)
 
-let graphics_resize () =
-  resize_window (Graphics.size_x ()) (Graphics.size_y ())
+let graphics_resize () = resize_window (Graphics.size_x ()) (Graphics.size_y ())
 
 (* initialisation d'une fenêtre graphique par le module Graphics *)
 let graphics_init () =

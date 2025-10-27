@@ -1,7 +1,7 @@
 (* GSL Gamma function, adaptative plot, and LaTeX formula *)
 
 module Math = struct
-  Gsl.Error.init ()
+  Gsl.Error.init ();;
 
   let gamma x =
     try Gsl.Sf.gamma x with Gsl.Error.Gsl_exn _ -> nan | e -> raise e

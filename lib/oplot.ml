@@ -1,4 +1,4 @@
-Debug.print "* Loading oplot"
+Debug.print "* Loading oplot";;
 
 (* Simple mathematical plotter library for `ocaml` with fast graphics (opengl),
    LaTeX display, and high quality vector output (xfig, postscript or PDF)
