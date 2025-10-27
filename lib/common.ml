@@ -92,6 +92,7 @@ type plot_object =
       (view option * plot_object option) ref * (view option -> plot_object)
     (* f doit être une fonction qui donne quelque chose même si view option = None. Ca peut servir à initialiser la view avec maxview *)
   | User of (view -> plot_device -> unit)
+  | UserAnim of (view -> plot_device -> unit)
   (* =une fonction utilisateur *)
   (* | Anim of (float -> plot_object)*)
   | Sheet of plot_object list

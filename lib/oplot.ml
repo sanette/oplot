@@ -18,25 +18,17 @@ Debug.print "* Loading oplot"
    General Public License for more details. *)
 
 module Points = Points
-module Common = Common
-
-module type GRAPHICS = Make_graphics.GRAPHICS
-
-module Main = Make.Make (Make_graphics.Dummy)
 
 (* The initial modules are grouped and re-split into two main modules: Plt for
    all usual functions and Internal for specific needs like goplot. TODO split
-   this from stracth. *)
+   this from stratch. *)
 
 (* module type PltS = Make_plt.S *)
 
 module Plt = struct
-  include Common
-  include Main
-  module Internal = Main
+  include Core
+  module Internal = Core
 end
-
-module Make = Make.Make
 
 (*
    Local Variables:

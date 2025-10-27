@@ -34,7 +34,7 @@ Mathematical plotting library for ocaml
 
 ## GUI
 
-An official standalone GUI for `oplot`:
+An official standalone GUI for `oplot.0.72`:
 [goplot](https://sanette.github.io/goplot/)
 
 ## Examples

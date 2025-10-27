@@ -1,0 +1,5 @@
+(library
+ (name oplot_dummy)
+ (public_name oplot.dummy)
+ (implements oplot.core)
+)

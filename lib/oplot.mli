@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.80
+    @version 0.81
     @author San Vũ Ngọc *)
 
 (** {1 Example}
@@ -63,16 +63,6 @@
     ]}
 
     {%html:<img src="example2.png" class="oplot" alt="oplot example">%} *)
-
-(**/**)
-
-module Common = Common
-
-module type GRAPHICS = Make_graphics.GRAPHICS
-
-module Make = Make.Make
-
-(**/**)
 
 module Points = Points
 
@@ -148,7 +138,9 @@ module Plt : sig
         (view option * plot_object option) ref * (view option -> plot_object)
         (** Any object that needs to adapt itself to the current View. *)
     | User of (view -> plot_device -> unit)
-        (** Execute any user-defined program. *)
+    (** Execute any user-defined program. *)
+    | UserAnim of (view -> plot_device -> unit)
+    (** Repeatedly execute any user-defined program. *)
     | Sheet of plot_object list  (** Group plot objects. *)
 
   (** {3 2D objects}
@@ -283,6 +275,12 @@ module Plt : sig
 
   val color : float -> float -> float -> plot_object
   (** Specify the RGB color for subsequent drawings. *)
+
+  val line_width : float -> plot_object
+  (** Set line width for subsequent drawings. *)
+
+  val text_color : color -> plot_object
+    (** Set text color for subsequent drawings. *)
 
   val freeze : int -> plot_object
   (** [freeze t] creates a {!Freeze} for [t] ms. *)
@@ -440,6 +438,7 @@ module Plt : sig
     val pngalpha : unit -> bool
     val has_fig2dev : bool
   end
+
 end
 
 (*

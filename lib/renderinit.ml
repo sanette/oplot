@@ -124,6 +124,7 @@ let clear = Clear !default_bg_color
    utilisée, mais parfois on a besoin de la modifier momentanément, et donc de
    s'en souvenir *)
 let current_color = ref blue
+let text_color = ref red
 
 (* fournit le triplet correspondant *)
 let float_of_color c = (c.r, c.g, c.b)

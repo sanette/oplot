@@ -60,7 +60,7 @@ let gllist_empty () : gllist = ref None
 let rec has_anim sh =
   match sh with
   | Sheet [] -> false
-  | User _ -> true
+  | UserAnim _ -> true
   | Move3d _ -> true
   | Sheet (po :: ssh) -> has_anim po || has_anim (Sheet ssh)
   | _ -> false
@@ -444,4 +444,5 @@ let rec get_points2 = function
   | Clear _ -> []
   | Adapt (a, _) -> ( match !a with _, Some p -> get_points2 p | _ -> [])
   | User _ -> []
+  | UserAnim _ -> []
   | Sheet _ -> []

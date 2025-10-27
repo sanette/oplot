@@ -1,3 +1,7 @@
+# 0.81 -- 2025/10/27
+
+* using dune "virtual modules" instead of parametric functor (for Graphics implementation)
+
 # 0.80 -- 2025/09/27
 
 * getting rid of lablgl; we use tgsl ang gl-legacy instead
