@@ -12,6 +12,7 @@ Debug.print "* Loading oplotmain"
 open Tsdl
 module Gl = Gl_legacy
 module Gl3 = Tgl3.Gl
+module Graphics = Graphics_impl
 open Common
 open Points
 open Point2
