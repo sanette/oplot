@@ -952,7 +952,7 @@ let set_line_width ?(dev = !default_device) w =
   match dev with
   | X11 -> Graphics.set_line_width (int_of_float w)
   | GL -> Gl3.line_width w
-  | FIG -> raise (Not_implemented "fig set_line_width")
+  | FIG -> Debug.print "Not implemented: fig set_line_width"
 
 let set_point_size ?(dev = !default_device) w =
   match dev with
