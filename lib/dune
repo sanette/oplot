@@ -1,6 +1,6 @@
 (library
  (name oplot)
- (public_name oplot.core)
+ (public_name oplot)
  (virtual_modules graphics_impl)
  (default_implementation oplot.dummy)
  (libraries bigarray tsdl tsdl-image tsdl-ttf tgls.tgl3 gl-legacy))
