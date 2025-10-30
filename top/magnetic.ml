@@ -3,7 +3,7 @@
 
 #thread;;
 
-#require "oplot";;
+#require "oplot.dummy";;
 
 open Oplot.Plt;;
 
@@ -108,6 +108,7 @@ display
     cnt;
     cnt_text;
     Color blue;
+    repeat;
     anm_slow;
     r_text;
     Color black;
@@ -117,4 +118,4 @@ display
 ;;
 
 display
-  [ vw; Color red; cnt; cnt_text; Color blue; anm; Color black; axis 0. 0. ];;
+  [ vw; Color red; cnt; cnt_text; Color blue; repeat; anm; Color black; axis 0. 0. ];;

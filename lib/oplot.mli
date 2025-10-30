@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.81
+    @version 0.82
     @author San Vũ Ngọc *)
 
 (** {1 Example}
@@ -139,7 +139,7 @@ module Plt : sig
         (** Any object that needs to adapt itself to the current View. *)
     | User of (view -> plot_device -> unit)
         (** Execute any user-defined program. *)
-    | UserAnim of (view -> plot_device -> unit)
+    | Anim of (float -> plot_object)
         (** Repeatedly execute any user-defined program. *)
     | Sheet of plot_object list  (** Group plot objects. *)
 
@@ -200,7 +200,7 @@ module Plt : sig
     plot_object
   (** If [f] is a function two parameters [t] and [x], then [anim_plot f x0 x1]
       will generate an animation of the graph of the functions [f t] for [t]
-      evolving with real time. The resulting object is of type {!User}. *)
+      evolving with real time. The resulting object is of type {!Anim}. *)
 
   val dot_plot :
     ?dot:(float -> float -> plot_object) ->
@@ -279,9 +279,6 @@ module Plt : sig
   val line_width : float -> plot_object
   (** Set line width for subsequent drawings. *)
 
-  val text_color : color -> plot_object
-  (** Set text color for subsequent drawings. *)
-
   val freeze : int -> plot_object
   (** [freeze t] creates a {!Freeze} for [t] ms. *)
 
@@ -291,6 +288,11 @@ module Plt : sig
   val rotate : float -> float -> float -> float -> float -> plot_object
   (** [rotate x y z theta t] rotates the 3D scene with angular velocity [theta]
       (in radians) aroung the axis ([x],[y],[z]), during time [t]. *)
+
+  val repeat : plot_object
+    (* Inserting this object in a sheet will force contiuous looping over the
+       sheet, as if there was some animation. Useful for animating User
+       objects. *)
 
   (** {3 Retrieving data from plot objects} *)
 
@@ -384,11 +386,8 @@ module Plt : sig
 
   val user_flush : plot_device -> unit
   (** Synchronize graphics output by swapping back and front buffers. Hence two
-      consecutive calls will result in flicker. See {!copy_back_buffer}. *)
+      consecutive calls will result in flicker. *)
 
-  val copy_back_buffer : unit -> unit
-  (** Copy backbuffer to front buffer. If I use this intensively I can really
-      hear my graphics card... *)
 
   (* val draw_points : points -> ?dev:plot_device -> ?dep:int -> view option -> unit *)
 

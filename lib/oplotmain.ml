@@ -227,6 +227,8 @@ let gl_init ?(show = true) () =
   | GTK -> gtk_init ());
   Debug.print "GL inits...";
   gl_clear_color !default_bg_color;
+  Gl3.draw_buffer Gl3.back;
+  Gl3.read_buffer Gl3.back;
   Gl3.clear Gl3.depth;
   Gl3.pixel_storei Gl3.unpack_alignment 1;
 
@@ -706,7 +708,7 @@ let rec maxview po =
   | Grid ((_, v3, _), _) -> view2of3 v3
   | Surf3d ((_, _, _, v3, _), _) -> view2of3 v3
   | Adapt (_, f) -> maxview (f None)
-  | User _ | UserAnim _ ->
+  | User _ | Anim _ ->
       None
       (* Some (point(-.1., -.1.), point(1.,1.)) *)
       (* mieux que rien ... *)
@@ -740,18 +742,24 @@ let copy_back_buffer () =
   Gl3.draw_buffer Gl3.back;
   Gl3.read_buffer Gl3.back
 
-let buffer_enum i =
+let copy_to_back_buffer () =
+  Gl3.draw_buffer Gl3.back;
+  Gl3.read_buffer Gl3.front;
+  Gl.copy_pixels 0 0 !window_width !window_height Gl.color;
+  Gl3.read_buffer Gl3.back
+
+let buffer_enum i = (* FIXME this is wrong, it cannot be an argument of draw_buffer, see https://registry.khronos.org/OpenGL-Refpages/gl2.1/xhtml/glDrawBuffer.xml *)
   assert (i >= 0 && i < 16);
   Gl3.draw_buffer0 + i
 
-let copy_buffer i =
+let copy_buffer i = (* wrong, see above *)
   Gl3.draw_buffer (buffer_enum i);
   Gl3.read_buffer Gl3.back;
   Gl.copy_pixels 0 0 !window_width !window_height Gl.color;
   Gl3.draw_buffer Gl3.back;
   Gl3.read_buffer Gl3.back
 
-let recall_buffer i =
+let recall_buffer i =(* wrong, see above *)
   Gl3.read_buffer (buffer_enum i);
   Gl3.draw_buffer Gl3.back;
   Gl.copy_pixels 0 0 !window_width !window_height Gl.color;
@@ -763,7 +771,8 @@ let user_flush = function
   | GL -> (
       match !default_gl with
       | GLUT -> Iglut.swapbuffers ()
-      | SDL -> do_option !win Sdl.gl_swap_window
+      | SDL ->
+        do_option !win Sdl.gl_swap_window
       | GTK -> () (* ??? *))
   | FIG -> ()
 
@@ -848,16 +857,16 @@ let latex_to_sdl message size =
 let text_image message size flag =
   match flag with
   | Normal ->
-      if size <> !current_font_size then (
-        current_font := Sdlttf.open_font !font_path size |> go;
-        current_font_size := size);
-      (* avoid opening the same font every time *)
-      let s =
-        Sdlttf.render_utf8_blended !current_font message
-          (sdl_color (opaque !text_color))
-        |> go
-      in
-      Sdl.convert_surface_format s Sdl.Pixel.format_argb8888 |> go
+    if size <> !current_font_size then (
+      current_font := Sdlttf.open_font !font_path size |> go;
+      current_font_size := size);
+    (* avoid opening the same font every time *)
+    let s =
+      Sdlttf.render_utf8_blended !current_font message
+        (sdl_color (opaque white)) (* we use white here and then modulate *)
+      |> go
+    in
+    Sdl.convert_surface_format s Sdl.Pixel.format_abgr8888 |> go
   | Latex -> latex_to_sdl message size
 
 (* l'image est rescalée pour que la taille soit indépendante de tout
@@ -1694,9 +1703,6 @@ let draw_axis a ?(dev = !default_device) view =
 
 let line_width x = User (fun _ dev -> set_line_width ~dev (!gl_scale *. x))
 
-let text_color c =
-  (* ne marche pas ! TODO use device *)
-  User (fun _ _ -> text_color := c)
 (********************************************************************)
 
 let window_flush ?(dev = !default_device) () =
@@ -2009,21 +2015,37 @@ let rec object_plot ?(addcounter = true) ~dev po view =
   | Freeze t -> do_freeze t ~dev
   | Clear c -> clear_sheet c ~dev
   | View _ -> ()
-  | UserAnim f | User f -> exec_user f view dev
+  | Anim f ->
+    let p = f (float (elapsed ()) /. 1000.) in
+    object_plot p view ~dev
+  | User f -> exec_user f view dev
   | Sheet _ ->
       raise (Invalid_argument "object_plot cannot accept Sheet argument")
 
 (* use t as a realtime parameter, in seconds *)
-let anim_plot f ?step ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
+let _anim_plot_old f ?step ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
   let userfu v dev =
     let t =
-      if t1 = 0. then t0 +. (float (time () - !initial_time) /. 1000.)
-      else fmin t1 (t0 +. (float (time () - !initial_time) /. 1000.))
+      if t1 = 0. then t0 +. (float (elapsed ()) /. 1000.)
+      else fmin t1 (t0 +. (float (elapsed ()) /. 1000.))
     in
     let p = plot (f t) ?step x0 x1 in
     object_plot p (Some v) ~dev
   in
   User userfu
+
+
+(* use t as a realtime parameter, in seconds *)
+let anim_plot f ?step ?(t0 = 0.) ?(t1 = 0.) x0 x1 =
+  let animfu time =
+    let t =
+      if t1 = 0. then t0 +. time
+      else fmin t1 (t0 +. time) (* TODO memoize the plot when t1 is reached *)
+    in
+    plot (f t) ?step x0 x1 in
+  Anim animfu
+
+let repeat = Anim (fun _ -> Points [])
 
 (* ne marche pas bien... refaire les pause *)
 let gl_zoom_out t pop =
@@ -2141,7 +2163,7 @@ let graphics_event () =
     false)
   else false
 
-(* boucle principale interactive Graphics  pour afficher la feuille sh *)
+(* boucle principale interactive Graphics pour afficher la feuille sh *)
 let rec graphics_mainloop sh =
   let r, g, b = int_of_color default_color in
   Graphics.set_color (Graphics.rgb r g b);
@@ -2320,7 +2342,7 @@ let write_bmp ?(output = png_output) sh =
   counter := 0;
   draw sh None ~dev:GL;
   window_flush () ~dev:GL;
-  copy_back_buffer ();
+  (* copy_back_buffer (); *)
   sdl_screenshot ~output ();
   close () ~dev:GL
 

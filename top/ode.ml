@@ -25,9 +25,9 @@ Gsl.odeiv.step_apply step ~t:0. ~h:0.001 ~y:y ~yerr:yerr sys;;
 
 
 *)
-#require "gsl"
+#require "gsl";;
 
-#require "oplot"
+#require "oplot.dummy"
 
 open Oplot.Plt
 open Oplot.Points
