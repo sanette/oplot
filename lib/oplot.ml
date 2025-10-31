@@ -17,11 +17,12 @@ Debug.print "* Loading oplot";;
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    General Public License for more details. *)
 
+include Oplot_intf
 module Points = Points
 
 module type GRAPHICS = Make_graphics.GRAPHICS
 
-module Core = Core.Make (Make_graphics.Dummy)
+module Core = Make_core.Make (Make_graphics.Dummy)
 
 (* The initial modules are grouped and re-split into two main modules: Plt for
    all usual functions and Internal for specific needs like goplot. TODO split
@@ -29,9 +30,15 @@ module Core = Core.Make (Make_graphics.Dummy)
 
 (* module type PltS = Make_plt.S *)
 
-module Plt = struct
+module Plt : S = struct
   include Core
   module Internal = Core
+end
+
+module Make (G : GRAPHICS) : S = struct
+  module Main = Make_core.Make (G)
+  include Main
+  module Internal = Main
 end
 
 (*
