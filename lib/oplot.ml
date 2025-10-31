@@ -3,7 +3,7 @@ Debug.print "* Loading oplot";;
 (* Simple mathematical plotter library for `ocaml` with fast graphics (opengl),
    LaTeX display, and high quality vector output (xfig, postscript or PDF)
 
-    Copyright (c) 2006-2022 VU NGOC San *)
+    Copyright (c) 2006-2025 VU NGOC San *)
 
 (* This program was initially developped by the author at the University of
    Grenoble a long time ago. *)
@@ -18,6 +18,10 @@ Debug.print "* Loading oplot";;
    General Public License for more details. *)
 
 module Points = Points
+
+module type GRAPHICS = Make_graphics.GRAPHICS
+
+module Core = Core.Make (Make_graphics.Dummy)
 
 (* The initial modules are grouped and re-split into two main modules: Plt for
    all usual functions and Internal for specific needs like goplot. TODO split

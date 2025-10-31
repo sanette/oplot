@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.82
+    @version 0.83
     @author San Vũ Ngọc *)
 
 (** {1 Example}
@@ -290,7 +290,7 @@ module Plt : sig
       (in radians) aroung the axis ([x],[y],[z]), during time [t]. *)
 
   val repeat : plot_object
-    (* Inserting this object in a sheet will force contiuous looping over the
+  (* Inserting this object in a sheet will force contiuous looping over the
        sheet, as if there was some animation. Useful for animating User
        objects. *)
 
@@ -387,7 +387,6 @@ module Plt : sig
   val user_flush : plot_device -> unit
   (** Synchronize graphics output by swapping back and front buffers. Hence two
       consecutive calls will result in flicker. *)
-
 
   (* val draw_points : points -> ?dev:plot_device -> ?dep:int -> view option -> unit *)
 

@@ -3,7 +3,7 @@
 
 #thread;;
 
-#require "oplot.dummy";;
+#require "oplot";;
 
 open Oplot.Plt;;
 

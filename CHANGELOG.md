@@ -1,3 +1,15 @@
+# 0.82 -- 2025/10/31
+
+* back to functors
+
+we save the "virtual modules" technique in a separate branch for when
+the fix https://github.com/ocaml/dune/issues/12636#event-20554298282
+reaches the ocaml.ci
+
+Also I don't know if "virtual modules" is ideal, because in the
+toplevel it requires #require "oplot.default" (one cannot use #require
+"oplot", although dune does accept (libraries oplot))
+
 # 0.81 -- 2025/10/27
 
 * using dune "virtual modules" instead of parametric functor (for Graphics implementation)

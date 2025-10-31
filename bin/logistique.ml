@@ -25,17 +25,22 @@ let rec trace ~progress x0 x1 step v dev =
     in
     object_plot (Points (loop 0 [])) (Some v) ~dev;
     set_color { r = x0 /. 4.; g = 0.5; b = 0.5 } ~dev;
-    let () = if progress (* we force showing the picture in progress: *) then
-        let t = elapsed () in if t - !time > 16 then (
+    let () =
+      if progress (* we force showing the picture in progress: *) then
+        let t = elapsed () in
+        if t - !time > 16 then (
           time := t;
           print_endline (string_of_int t)
-          (* user_flush dev; *) (* THIS WILL BADLY FLICKR ON MOST HARDWARE *)) in
+          (* user_flush dev; *)
+          (* THIS WILL BADLY FLICKER ON MOST HARDWARE *))
+    in
     trace ~progress (x0 +. step) x1 step v dev
 
 let logistique ?(progress = true) ~step v dev =
-  print_endline "Logistique";
-  trace ~progress (fst v).x (snd v).x step v dev
-  (* copy_back_buffer () *)
+  print_endline "Start computing...";
+  trace ~progress (fst v).x (snd v).x step v dev;
+  print_endline "...done."
+(* copy_back_buffer () *)
 
 (* thanks to this, the picture is not erased in the second display invocation
    below when there is no Pause. *)
@@ -45,9 +50,7 @@ let a = axis 2.5 0.
 let compute = text "Computing..." 2.7 0.3
 let finished = text "Done." 2.9 0.3;;
 
-display
-  [ v; a; compute; User (logistique ~step:0.001); finished ]
-;;
+display [ v; a; compute; User (logistique ~step:0.001); finished ];;
 
 display
   [
@@ -56,7 +59,7 @@ display
     compute;
     (* Pause 1; *)
     User (logistique ~progress:false ~step:0.001);
-    finished
+    finished;
   ]
 ;;
 
