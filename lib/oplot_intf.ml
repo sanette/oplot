@@ -366,9 +366,9 @@ end
 
 module type Intf = sig
   module type S = S
-
+  module type GRAPHICS = Make_graphics.GRAPHICS
   module Plt : S
-  module Make : Make_graphics.GRAPHICS -> S
+  module Make : GRAPHICS -> S
 end
 
 (*

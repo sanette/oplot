@@ -42,7 +42,7 @@ An official standalone GUI for `oplot.0.72`:
 The `top` directory contains examples that can be run from the ocaml
 toplevel. See the [README](top/README.md) file.
 
-## Install v 0.80
+## Install version >= 0.80
 
 The current version does not require `lablgl`, but instead you should install `tgls` and `gl-legacy`:
 
@@ -79,3 +79,8 @@ opam install gsl
 recommended), you need to use the
 [`oplot-graphics`](https://github.com/sanette/oplot-graphics) opam
 package.
+
+## Extensions to other backends
+
+It's easy to add another backend by using the GRAPHICS signature, see
+https://github.com/sanette/oplot-graphics

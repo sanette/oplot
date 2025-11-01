@@ -74,6 +74,7 @@ module Points = Points
 
 include Oplot_intf.Intf
 (** @inline *)
+
 (*
    Local Variables:
    compile-command:"cd ..;dune build"
