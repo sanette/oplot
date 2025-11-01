@@ -32,7 +32,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* (bx0,by0, bx1,by1) : coordonnées logiques (et non physiques) de la fenêtre *)
   let bounding_box dev =
     match dev with
-    | X11 -> (1., 1., !fwindow_width, !fwindow_height)
+    | GRAPHICS -> (1., 1., !fwindow_width, !fwindow_height)
     (* ici logique=physique, à un décalage de 1 près *)
     | GL -> (0., 0., 1., 1.)
     (* sous opengl le redimensionnement de la fenêtre est pris en compte
@@ -272,7 +272,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let close ?(dev = !default_device) () =
     match dev with
-    | X11 -> Graphics.close_graph ()
+    | GRAPHICS -> Graphics.close_graph ()
     | GL -> (
         window_open := false;
         if !fullscreen then toggle_fullscreen ();
@@ -778,7 +778,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     Gl3.read_buffer Gl3.back
 
   let user_flush = function
-    | X11 -> Graphics.synchronize ()
+    | GRAPHICS -> Graphics.synchronize ()
     | GL -> (
         match !default_gl with
         | GLUT -> Iglut.swapbuffers ()
@@ -972,19 +972,19 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let set_line_width ?(dev = !default_device) w =
     match dev with
-    | X11 -> Graphics.set_line_width (int_of_float w)
+    | GRAPHICS -> Graphics.set_line_width (int_of_float w)
     | GL -> Gl3.line_width w
     | FIG -> Debug.print "Not implemented: fig set_line_width"
 
   let set_point_size ?(dev = !default_device) w =
     match dev with
-    | X11 -> raise (Not_implemented "X11 set_point_size")
+    | GRAPHICS -> raise (Not_implemented "GRAPHICS set_point_size")
     | GL -> Gl3.point_size w
     | FIG -> raise (Not_implemented "fig set_line_size")
 
   let set_color ?(dev = !default_device) c =
     (match dev with
-    | X11 ->
+    | GRAPHICS ->
         let r, g, b = int_of_color c in
         Graphics.set_color (Graphics.rgb r g b)
     | GL -> gl_draw_color c
@@ -1022,7 +1022,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
      overlapping (instead of being clearly disjoint). *)
     let ps = rescale_list pl view (bounding_box dev) in
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         Graphics.plots
           (Array.of_list
              (List.rev_map (fun (x, y) -> (int_of_float x, int_of_float y)) ps))
@@ -1055,7 +1055,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let draw_lines pl ~dev ?dep view =
     let ps = rescale_list pl view (bounding_box dev) in
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         Graphics.draw_poly_line
           (Array.of_list
              (List.rev_map (fun (x, y) -> (int_of_float x, int_of_float y)) ps))
@@ -1090,7 +1090,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let draw_poly pl ?(dev = !default_device) ?border_color ?dep view =
     let ps = rescale_list pl view (bounding_box dev) in
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         Graphics.fill_poly
           (Array.of_list
              (List.rev_map (fun (x, y) -> (int_of_float x, int_of_float y)) ps))
@@ -1127,7 +1127,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     let dc = float (max_value - min_value) in
     let cmap = cmap !current_color in
     begin match dev with
-    | X11 -> raise (Not_implemented "X11 draw_matrix")
+    | GRAPHICS -> raise (Not_implemented "GRAPHICS draw_matrix")
     | GL ->
         let dx = 1. /. float w and dy = 1. /. float h in
         for i = 0 to h - 1 do
@@ -1201,7 +1201,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let rec draw_surf3d ?(dev = !default_device) ?(wire = true) gl plot_func mx my
       mz (p1, p2) =
     match dev with
-    | X11 -> raise (Not_implemented "X11 draw_surf3d")
+    | GRAPHICS -> raise (Not_implemented "GRAPHICS draw_surf3d")
     | GL -> begin
         enter3d (p1, p2);
         (* ne peut pas être mis dans la displaylist car contient la rotation qui
@@ -1323,7 +1323,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     (* w,i=lignes, h,j=colonnes *)
     let { r; g; b } = !current_color in
     match dev with
-    | X11 -> raise (Not_implemented "X11 draw_grid")
+    | GRAPHICS -> raise (Not_implemented "GRAPHICS draw_grid")
     | GL -> (
         enter3d (p1, p2);
         match !gl with
@@ -1427,7 +1427,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let rec draw_curve3d ?(dev = !default_device) gl plot_func p3d (p1, p2) =
     match dev with
-    | X11 -> raise (Not_implemented "X11 draw_curve3d")
+    | GRAPHICS -> raise (Not_implemented "GRAPHICS draw_curve3d")
     | GL -> begin
         enter3d (p1, p2);
         match !gl with
@@ -1454,7 +1454,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let draw_segments pl ?(dev = !default_device) ?dep view =
     let ps = rescale_list pl view (bounding_box dev) in
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         Graphics.draw_segments
           (Array.of_list
              (let rec pair l =
@@ -1495,9 +1495,9 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let draw_text ?(dev = !default_device) ?dep view t =
     let x0, y0 = draw_of_point t.pos view (bounding_box dev) in
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         Graphics.set_text_size (iscale t.size);
-        (* la size n'est pas prise en compte sous X11 ?? *)
+        (* la size n'est pas prise en compte sous GRAPHICS ?? *)
         (* en remplacement: *)
         (* or use an "association list" (size,font) *)
         let size = max 6 (min 40 (iscale t.size) land 62) in
@@ -1727,7 +1727,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let window_flush ?(dev = !default_device) () =
     match dev with
-    | X11 -> Graphics.synchronize ()
+    | GRAPHICS -> Graphics.synchronize ()
     | GL -> (*Gl.finish () ? *) do_option !win Sdl.gl_swap_window
     | FIG -> raise (Not_implemented "FIG flush")
   (* flush buffer *)
@@ -1949,7 +1949,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let do_freeze ?(dev = !default_device) t =
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         Graphics.synchronize ();
         if t = 0 then ignore (Graphics.read_key ())
         else ignore (Unix.select [] [] [] (float t /. 1000.))
@@ -1968,7 +1968,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
 
   let do_pause ?(dev = !default_device) t =
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         Graphics.synchronize ();
         if t = 0 then ignore (Graphics.read_key ())
         else ignore (Unix.select [] [] [] (float t /. 1000.))
@@ -1994,7 +1994,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   let clear_sheet ?(dev = !default_device) c =
     (* à modifier pour n'effacer que la view *)
     match dev with
-    | X11 -> Graphics.clear_graph ()
+    | GRAPHICS -> Graphics.clear_graph ()
     (* la couleur est ignorée *)
     | GL ->
         gl_clear_color c;
@@ -2198,7 +2198,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     current_color := default_color;
     Graphics.clear_graph ();
     (* ne pas mettre ici ? *)
-    draw sh None ~dev:X11;
+    draw sh None ~dev:GRAPHICS;
     Graphics.synchronize ();
     if graphics_event () then () else graphics_mainloop sh
 
@@ -2381,7 +2381,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     reset_view3 ();
     (* réinitialiser aussi les variables globales... *)
     match dev with
-    | X11 ->
+    | GRAPHICS ->
         graphics_init ();
         graphics_resize ();
         graphics_mainloop sh
@@ -2426,7 +2426,7 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   (* interactif: wrapper/raccourci pour tracer une liste d'objets *)
   let display ?(dev = !default_user_device) ?(fscreen = false) ?output sh =
     match dev with
-    | X11_d -> disp (Sheet sh) ~dev:X11
+    | GRAPHICS_d -> disp (Sheet sh) ~dev:GRAPHICS
     | GL_d -> disp (Sheet sh) ~dev:GL ~fscreen
     | FIG_d ->
         disp (Sheet sh) ~dev:FIG;

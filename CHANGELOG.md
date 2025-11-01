@@ -1,3 +1,8 @@
+# 0.84 -- 2025/01/01 (breaking change)
+
+* rename x11 -> graphics
+* rename X11 -> GRAPHICS
+
 # 0.83 -- 2025/10/31
 
 * back to functors

@@ -4,7 +4,7 @@ module type S = sig
 
       This module contains all functions for defining and rendering plots. *)
 
-  type plot_device = X11 | GL | FIG
+  type plot_device = GRAPHICS | GL | FIG
   type view = point * point
   type view3 = point3 * point3
   type points = point list
@@ -241,7 +241,7 @@ module type S = sig
 
   (** {3 Available devices} *)
 
-  val x11 : user_device
+  val graphics : user_device
   (** Software rendering in a separate window. *)
 
   val gl : user_device

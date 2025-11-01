@@ -5,7 +5,7 @@ open Tsdl
 module Gl = Gl_legacy
 
 (* sorties graphiques de base implémentées par le programme *)
-type plot_device = X11 | GL | FIG
+type plot_device = GRAPHICS | GL | FIG
 type mrange = { mutable min : float; mutable max : float }
 type points = point list
 type view = point * point
@@ -106,7 +106,7 @@ type coord = X | Y
 
 (* sorties graphiques utilisables par l'utilisateur *)
 type user_device =
-  | X11_d
+  | GRAPHICS_d
   | GL_d
   | FIG_d
   | XFIG_d

@@ -13,7 +13,7 @@ let multisampling = ref true
 let gl_scale = ref 2.
 
 (* user aliases *)
-let x11 = X11_d
+let graphics = GRAPHICS_d
 and gl = GL_d
 and fig = FIG_d
 and xfig = XFIG_d
@@ -33,7 +33,7 @@ let set_device devname =
   default_device :=
     List.assoc devname
       [
-        (X11_d, X11);
+        (GRAPHICS_d, GRAPHICS);
         (GL_d, GL);
         (FIG_d, FIG);
         (XFIG_d, FIG);
