@@ -365,10 +365,84 @@ module type S = sig
 end
 
 module type Intf = sig
+  (** {1 Example}
+
+    [Oplot] can be used in the toplevel. First load the library with
+
+    {[
+      #use "topfind"
+
+      #thread
+
+      #require "oplot"
+    ]}
+
+    You may open the {!Oplot.Plt} module for easy access to all plot functions.
+
+    {[
+      open Oplot.Plt
+    ]}
+
+    Draw the graph of the [sine] function with
+
+    {[
+      let p = plot sin (-2.) 20.
+      let a = axis 0. 0.;;
+
+      display [ Color red; p; Color black; a ]
+    ]}
+
+    This will open a window with the graphics, which should look like this:
+
+    {%html:<img src="example.png" class="oplot" alt="oplot example">%}
+
+    Press [F] for fullscreen toggle, [CTRL-S] for saving the image, and [ESC] or
+    [Q] to close the window. Press [h] to see the list of active keys.
+
+    Of course you can play with it:
+
+    {[
+      let rec sh i =
+        if i == 0 then []
+        else
+          let p =
+            line_plot_f
+              (fun x -> sin (x +. (float_of_int i /. 50.)))
+              0. 20. ~step:0.05
+          in
+          let c =
+            color (float_of_int i /. 50.) (1. -. (float_of_int i /. 50.)) 0.
+          in
+          c :: p :: sh (i - 1)
+      ;;
+
+      display (sh 50)
+    ]}
+
+    {%html:<img src="example2.png" class="oplot" alt="oplot example">%} *)
+
+
+  (** {1 Main Oplot functions} *)
+
+  module Points = Points
+  (** Types of points (2D or 3D). *)
+
+  module Plt : S
+  (** This module contains all plotting functions. *)
+
+  (** {1 Adding a new graphics backend}
+
+      These signatures allow you to add another backend. An example is to use
+      the old [Graphics] library, see
+      {{:https://github.com/sanette/oplot-graphics}oplot-graphics}. *)
+
   module type S = S
   module type GRAPHICS = Make_graphics.GRAPHICS
-  module Plt : S
   module Make : GRAPHICS -> S
+  (** Use this functor to create a new [Plt] module for adding a drawing
+      backend. *)
+
+
 end
 
 (*
