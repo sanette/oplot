@@ -38,6 +38,8 @@ let maxpoints = 3000
 let current_view3d : view3 option ref = ref None
 (* attention pas réentrant...*)
 
+let default_view = { Point2.x=0.; y=0.}, { Point2.x=1.; y=1.}
+
 let initialize_view3 v =
   match !current_view3d with
   | None ->

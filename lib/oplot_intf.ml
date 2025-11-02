@@ -167,9 +167,8 @@ module type S = sig
       ?sub_size:int * int ->
       ?steps:int ->
       ?better:int -> ?depth:int -> (point -> float) -> point * point -> plot_object * info
-    (** [compute f (p0, p1)] returns a {!Lines} object that draws (an
-          approximation) of the level set [f p = 0] inside the box delimited by
-          the diagonal points [p0,p1].
+    (** Use [compute f (p0, p1)] to compute (an approximation) of the level set
+        [f p = 0] inside the box delimited by the diagonal points [p0,p1].
 
          This is essentialy the same as {!Plt.implicit_curve} but returns both a
          [plot_object] and an [info] value. Use this version only if you need to
