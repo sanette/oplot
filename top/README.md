@@ -33,3 +33,7 @@ but not for `utop` for some reason...
 
 `surf3d.ml`:
 ![surf3d](surf3d.png)
+
+`heart.ml`
+![isocurve](isocurve.png)
+![isocurve_debug](isocurve_debug.png)
