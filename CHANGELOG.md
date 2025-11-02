@@ -1,4 +1,8 @@
-# 0.84 -- 2025/01/01 (breaking change)
+# 0.85 -- 2025/11/01
+
+* Add `implicit_plot`
+
+# 0.84 -- 2025/11/01 (breaking change)
 
 * rename x11 -> graphics
 * rename X11 -> GRAPHICS

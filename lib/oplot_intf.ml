@@ -1,3 +1,5 @@
+(* Main interface file for Oplot *)
+
 module type S = sig
   open Points
   (** Main Oplot functions
@@ -115,6 +117,111 @@ module type S = sig
     (float -> float) -> ?step:float -> float -> float -> plot_object
   (** Similar to {!line_plot_f}, but the plot will be dynamically cropped to the
       current {!type-view} object. It returns an {!Adapt} object. *)
+
+  val implicit_curve :
+    ?pixel_size:int * int ->
+    ?grid_size:int * int ->
+    ?sub_size:int * int ->
+    ?depth:int ->
+    ?steps:int ->
+    ?better:int ->
+    (float ->float -> float) -> view -> plot_object
+  (** [implicit_curve f (p0, p1)] returns a {!Lines} object that draws (an
+      approximation) of the level set [f x y = 0] inside the box delimited by
+      the diagonal points [p0,p1].
+
+      If the result is not satisfactory, or if you want a faster computation,
+      you can play with the optional parameters; their meanings are explained in
+      {!Isocurve.compute_level}.
+
+     *)
+
+  module Isocurve : sig
+    (** Additional utilities for drawing and inspecting curves defined by an
+        implicit equation. *)
+
+    type info = {
+      grid_size : int * int; (** Size of the initial sampling array. See {!compute_level}. *)
+
+      grid : plot_object; (** Plottig this object will draw the initial grid. This
+                              field is empty if [debug=false] in the call of
+                              {!compute_level}. *)
+
+      boxes : plot_object; (** Plotting this object will draw the cells where
+                               subsampling has been performed. *)
+
+      steps : int; (** See {!compute_level}. *)
+      depth : int; (** See {!compute_level}. *)
+
+      poles : int; (** Number of sign changes of [f] that have not been considered
+                       as zeros, but rather as poles (where the function diverges or
+                       is highly discontinuous.)*)
+
+      message : Buffer.t (** Reading this string willl give you some debug
+                             information. *)
+    }
+
+    val compute_level : ?debug:bool ->
+      ?pixel_size:int * int ->
+      ?grid_size:int * int ->
+      ?sub_size:int * int ->
+      ?steps:int ->
+      ?better:int -> ?depth:int -> (point -> float) -> point * point -> plot_object * info
+    (** [compute f (p0, p1)] returns a {!Lines} object that draws (an
+          approximation) of the level set [f p = 0] inside the box delimited by
+          the diagonal points [p0,p1].
+
+         This is essentialy the same as {!Plt.implicit_curve} but returns both a
+         [plot_object] and an [info] value. Use this version only if you need to
+         obtain debug information.
+
+        The meaning of the optional parameters is as follows.
+
+        - [pixel_size] is a hint to size in pixels of the box where the curve
+            will be drawn; it is used to detect the resolution at which the
+            computations should be made. The default is [(500,500)].
+        - [grid_size] is size of the initial sampling of the function [f]. For
+            instance, if [grid_size=(7,5)] the (x,y) region where the implicit curve
+            is sought is divised into 7x5 cells; hence there are 8=7+1 sampling
+            points in the horizontal (x) direction, and 6=5+1 sampling points in the
+            vertical direction. By default [grid_size] is automatically detected by
+            looking at the function oscillations, starting from an initial size of
+            (34,34). Specifying this parameter skips this detection, resulting in
+            less evaluations of the function.
+
+            Note however that sub-sampling will be applied (if [sub_size] is not
+            [(1,1)]) in the cells where the curvature of the levelset is high.
+
+        - [sub_size] is the size of the sub-grid recursively used for a better
+            approximation of the curve in cells where the curvature seems too
+            high. The default is [(2,2)].
+        - [depth] is the maximum number of recursive subdivisions of cells. By
+            default it is computed in such a way that the smallest sub-cell is not
+            smaller than the required pixel resolution. You may reduce it for
+            fastest computation. [depth=4] is typically a good choice.
+        - [steps] is the maximum number of steps used by the Newton method to
+            determine the position of the curve on the cells boundaries. Currently
+            the default is 4.
+        - [better] is a quick way to obtain a more precise curve without setting
+          any other parameter. You can first try [better=1] , then [better=2],
+          etc. Using a negative number will degrade the precision of the curve. Of
+          course the default is 0.
+
+
+        In the image below we plot the initial grid (in green) and the recursive
+        subgrids (in cyan). We see that the curve looks nice and smooth while
+        the initial grid was not a priori fine enough.
+
+         {%html:<img src="isocurve_debug.png" class="oplot" alt="isocurve example">%}
+
+        (Image obtained by the [heart.ml] example.)
+
+    *)
+
+    val print_info : info -> unit
+
+  end
+
 
   val anim_plot :
     (float -> float -> float) ->
@@ -367,60 +474,60 @@ end
 module type Intf = sig
   (** {1 Example}
 
-    [Oplot] can be used in the toplevel. First load the library with
+      [Oplot] can be used in the toplevel. First load the library with
 
-    {[
-      #use "topfind"
+      {[
+        #use "topfind"
 
-      #thread
+        #thread
 
-      #require "oplot"
-    ]}
+        #require "oplot"
+      ]}
 
-    You may open the {!Oplot.Plt} module for easy access to all plot functions.
+      You may open the {!Oplot.Plt} module for easy access to all plot
+      functions.
 
-    {[
-      open Oplot.Plt
-    ]}
+      {[
+        open Oplot.Plt
+      ]}
 
-    Draw the graph of the [sine] function with
+      Draw the graph of the [sine] function with
 
-    {[
-      let p = plot sin (-2.) 20.
-      let a = axis 0. 0.;;
+      {[
+        let p = plot sin (-2.) 20.
+        let a = axis 0. 0.;;
 
-      display [ Color red; p; Color black; a ]
-    ]}
+        display [ Color red; p; Color black; a ]
+      ]}
 
-    This will open a window with the graphics, which should look like this:
+      This will open a window with the graphics, which should look like this:
 
-    {%html:<img src="example.png" class="oplot" alt="oplot example">%}
+      {%html:<img src="example.png" class="oplot" alt="oplot example">%}
 
-    Press [F] for fullscreen toggle, [CTRL-S] for saving the image, and [ESC] or
-    [Q] to close the window. Press [h] to see the list of active keys.
+      Press [F] for fullscreen toggle, [CTRL-S] for saving the image, and [ESC]
+      or [Q] to close the window. Press [h] to see the list of active keys.
 
-    Of course you can play with it:
+      Of course you can play with it:
 
-    {[
-      let rec sh i =
-        if i == 0 then []
-        else
-          let p =
-            line_plot_f
-              (fun x -> sin (x +. (float_of_int i /. 50.)))
-              0. 20. ~step:0.05
-          in
-          let c =
-            color (float_of_int i /. 50.) (1. -. (float_of_int i /. 50.)) 0.
-          in
-          c :: p :: sh (i - 1)
-      ;;
+      {[
+        let rec sh i =
+          if i == 0 then []
+          else
+            let p =
+              line_plot_f
+                (fun x -> sin (x +. (float_of_int i /. 50.)))
+                0. 20. ~step:0.05
+            in
+            let c =
+              color (float_of_int i /. 50.) (1. -. (float_of_int i /. 50.)) 0.
+            in
+            c :: p :: sh (i - 1)
+        ;;
 
-      display (sh 50)
-    ]}
+        display (sh 50)
+      ]}
 
-    {%html:<img src="example2.png" class="oplot" alt="oplot example">%} *)
-
+      {%html:<img src="example2.png" class="oplot" alt="oplot example">%} *)
 
   (** {1 Main Oplot functions} *)
 
@@ -438,11 +545,10 @@ module type Intf = sig
 
   module type S = S
   module type GRAPHICS = Make_graphics.GRAPHICS
+
   module Make : GRAPHICS -> S
   (** Use this functor to create a new [Plt] module for adding a drawing
       backend. *)
-
-
 end
 
 (*

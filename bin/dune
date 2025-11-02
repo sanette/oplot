@@ -1,7 +1,7 @@
 (executables
- (names example logistique anim matrix surf3d example_pdf)
- (modules example logistique anim matrix surf3d example_pdf)
- (public_names example logistique anim matrix surf3d example_pdf)
+ (names example logistique anim matrix surf3d example_pdf heart)
+ (modules example logistique anim matrix surf3d example_pdf heart)
+ (public_names example logistique anim matrix surf3d example_pdf heart)
  (libraries oplot))
 
 ; uncomment these if you have installed the gsl package

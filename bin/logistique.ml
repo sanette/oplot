@@ -37,9 +37,8 @@ let rec trace ~progress x0 x1 step v dev =
     trace ~progress (x0 +. step) x1 step v dev
 
 let logistique ?(progress = true) ~step v dev =
-  print_endline "Start computing...";
-  trace ~progress (fst v).x (snd v).x step v dev;
-  print_endline "...done."
+  print_endline "Logistique";
+  trace ~progress (fst v).x (snd v).x step v dev
 (* copy_back_buffer () *)
 
 (* thanks to this, the picture is not erased in the second display invocation

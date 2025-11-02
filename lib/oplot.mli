@@ -5,12 +5,11 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.84
+    @version 0.85
     @author San Vũ Ngọc *)
 
-
-
-include Oplot_intf.Intf (** @inline *)
+include Oplot_intf.Intf
+(** @inline *)
 
 (*
    Local Variables:

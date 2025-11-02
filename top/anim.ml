@@ -43,5 +43,3 @@ display
   ]
   ~dev:gl
 ;;
-
-quit ()

@@ -68,4 +68,3 @@ display
 ;;
 
 (* BUG: Freeze prevents proper rescaling of the window *)
-quit ()

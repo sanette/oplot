@@ -9,6 +9,7 @@ Mathematical plotting library for ocaml
 + 2D plots
   + function `y = f(x)`
   + parametric curves
+  + implicit curves `f(x,y) = 0`
   + can use mathematical functions from other libraries like `gsl`
   + can use LaTeX to display text and formulas
   + animations
