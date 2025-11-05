@@ -9,12 +9,16 @@ let a = axis 0. 0.
 let ctr = implicit_curve heart (p0, p1);;
 
 display [ v; Color black; a; line_width 2.; Color blue; ctr ];;
+display ~dev:pdf [ v; Color black; a; line_width 2.; Color blue; ctr ];;
 
 open Printf
 open Oplot.Points.Point2
 
+(* You can see that there is a slight discontinuity near (1,0). This problems
+   will disappear by using the optional argument [~better:1]. *)
+
 let f p = heart p.x p.y
-let ctr, info = Isocurve.compute_level ~debug:true f (p0, p1)
+let ctr, info = Isocurve.compute_level ~debug:true (* ~better:1 *) f (p0, p1)
 let gx, gy = info.grid_size
 
 let txt =
@@ -47,4 +51,26 @@ display
   ]
 ;;
 
+(* Now some animation of the level sets *)
+let f u x y = heart x y -. u
+let param t = 4. *. (sin (t -. 2.) ** 5.)
+
+let anim t =
+  let u = param t in
+  implicit_curve (f u) (p0, p1)
+
+let txt t = text ~align:LEFT (sprintf "f(x,y)=%.6f" (param t)) 1. (-2.25);;
+
+Internal.reset_time ();;
+display [ v; Color black; a; line_width 2.; Color blue; Anim anim; Anim txt ];;
+
+(* Now let the chaos enter! *)
+
+let r = 3.
+let p0, p1 = (point (-.r, -.r), point (r, r))
+let v = view (-.r) (-.r) r r
+let f x y = sin (10. *. heart x y)
+let ctr = implicit_curve ~grid_size:(500, 500) f (p0, p1);;
+
+display [ v; line_width 2.; Color blue; ctr ];;
 quit ()

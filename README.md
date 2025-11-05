@@ -45,8 +45,10 @@ toplevel. See the [README](top/README.md) file.
 
 ## Install version >= 0.80
 
-The current version does not require `lablgl`, but instead you should install `tgls` and `gl-legacy`:
+The current version does not require `lablgl`, but uses instead `tgls` and `gl-legacy`.
+They will be automatically installed if you use `opam install oplot`.
 
+If you need the newest versions:
 
 ```bash
 opam install tgls

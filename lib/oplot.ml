@@ -22,24 +22,17 @@ module Points = Points
 
 module type GRAPHICS = Make_graphics.GRAPHICS
 
-module Core = Make_core.Make (Make_graphics.Dummy)
-
 (* The initial modules are grouped and re-split into two main modules: Plt for
    all usual functions and Internal for specific needs like goplot. TODO split
    this from stratch. *)
-
-(* module type PltS = Make_plt.S *)
-
-module Plt : S = struct
-  include Core
-  module Internal = Core
-end
 
 module Make (G : GRAPHICS) : S = struct
   module Main = Make_core.Make (G)
   include Main
   module Internal = Main
 end
+
+module Plt = Make (Make_graphics.Dummy)
 
 (*
    Local Variables:

@@ -470,7 +470,9 @@ let box p0 p1 =
 (* call this function to create a User structure that oplot can display *)
 (* TODO: optionnally pass the gradient to speed up computations *)
 (* todo MEMOIZE wrt view *)
-let compute_level ?(debug=false) ?(pixel_size = (500,500)) ?grid_size ?(sub_size = (2,2))
+let compute_level ?(debug=false)
+    ?(pixel_size = (!Oplotdef.window_width, !Oplotdef.window_height))
+    ?grid_size ?(sub_size = (2,2))
     ?(steps=4) ?(better=0) ?depth f v : C.plot_object * info =
   let message = Buffer.create 80 in
   let p0,p1 = v in
