@@ -104,11 +104,13 @@ module type S = sig
   val point_plot_f :
     (float -> float) -> ?step:float -> float -> float -> plot_object
   (** [point_plot_f f x0 x1] computes a subset of the graph of the function [f]
-      obtained by isolated points with a fixed horizontal step. *)
+      obtained by islated points with a fixed horizontal step. *)
 
   val line_plot_f :
     (float -> float) -> ?step:float -> float -> float -> plot_object
   (** Similar to {!point_plot_f} but the points are joined by line segments. *)
+
+  val connect_lines : epsilon:float -> plot_object -> plot_object
 
   val plot : (float -> float) -> ?step:float -> float -> float -> plot_object
   (** Alias for {!line_plot_f}. *)
@@ -532,6 +534,8 @@ module type Intf = sig
 
   module Points = Points
   (** Types of points (2D or 3D). *)
+
+  module Debug = Debug
 
   module Plt : S
   (** This module contains all plotting functions. *)

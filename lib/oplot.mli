@@ -5,7 +5,7 @@
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 
-    @version 0.85
+    @version 0.86
     @author San Vũ Ngọc *)
 
 include Oplot_intf.Intf

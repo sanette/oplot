@@ -203,6 +203,16 @@ let lines_crop lines v =
   in
   loop lines None [] []
 
+let connect_lines ~epsilon = function
+  | Lines list ->
+    if Debug.debug then Debug.print "Simplifying line with %i paths..."
+        (List.length list);
+    let l = Path.Comp2D.concat_lists epsilon list in
+    if Debug.debug then Debug.print "... simplified line has %i paths."
+        (List.length l);
+    Lines l
+  | _ -> raise (Invalid_argument "[simplify_line]")
+
 (* crée un objet Adapt pour un graphe de fonction *)
 let adapt_plot f ?step x0 x1 =
   let list = point_list f ?step x0 x1 () in

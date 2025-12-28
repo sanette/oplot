@@ -379,7 +379,7 @@ let connect_full_face ~final_pass f grid (i,j) bottom left top right =
           | _ -> Debug.print "Error !! at (%d,%d)" i j; []
         end
       else begin
-        Debug.print "Isocure: Quadruple intersection at (i,j)=(%d,%d)   (x,y)=%s"
+        Debug.print "Isocurve: Quadruple intersection at (i,j)=(%d,%d)   (x,y)=%s"
           i j (sprint_vertex (vertex_pos grid (i,j)));
         match bottom, left, top, right with
         | Some b, Some l, Some t, Some r ->
