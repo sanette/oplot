@@ -2506,8 +2506,13 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
       exit 0)
 
   let () =
-    Sys.set_signal Sys.sigusr1 (Sys.Signal_handle interruption);
-    Sys.set_signal Sys.sigint (Sys.Signal_handle interruption)
+    match Sys.os_type with
+    | "Unix" ->
+      Sys.set_signal Sys.sigusr1 (Sys.Signal_handle interruption);
+      Sys.set_signal Sys.sigint (Sys.Signal_handle interruption)
+    | _ ->
+      Sys.set_signal Sys.sigint (Sys.Signal_handle interruption)
+
 end
 (* of module Make *)
 (************************************************************************)
