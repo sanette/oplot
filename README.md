@@ -56,9 +56,12 @@ opam pin https://github.com/sanette/gl-legacy.git
 opam pin https://github.com/sanette/oplot.git
 ```
 
-On **Windows**, before installing, you may need to select this `tsdl` version:
+On **Windows**, you may need to select these `tsdl*` versions:
 
 	opam pin https://github.com/sanette/tsdl
+	opam pin https://github.com/sanette/tsdl-ttf.git
+	opam pin https://github.com/sanette/tsdl-image.git
+	opam install oplot
 
 ## Install v 0.72
 

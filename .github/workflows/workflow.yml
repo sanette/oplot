@@ -35,6 +35,10 @@ jobs:
 
       - run: opam pin https://github.com/sanette/tsdl.git
 
+      - run: opam pin https://github.com/sanette/tsdl-ttf.git
+
+      - run: opam pin https://github.com/sanette/tsdl-image.git
+
       - run: opam install tgls
 
       - run: opam pin https://github.com/sanette/gl-legacy.git
