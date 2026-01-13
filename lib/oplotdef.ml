@@ -38,7 +38,7 @@ let maxpoints = 3000
 let current_view3d : view3 option ref = ref None
 (* attention pas réentrant...*)
 
-let default_view = { Point2.x=0.; y=0.}, { Point2.x=1.; y=1.}
+let default_view = ({ Point2.x = 0.; y = 0. }, { Point2.x = 1.; y = 1. })
 
 let initialize_view3 v =
   match !current_view3d with
@@ -205,12 +205,12 @@ let lines_crop lines v =
 
 let connect_lines ~epsilon = function
   | Lines list ->
-    if Debug.debug then Debug.print "Simplifying line with %i paths..."
-        (List.length list);
-    let l = Path.Comp2D.concat_lists epsilon list in
-    if Debug.debug then Debug.print "... simplified line has %i paths."
-        (List.length l);
-    Lines l
+      if Debug.debug then
+        Debug.print "Simplifying line with %i paths..." (List.length list);
+      let l = Path.Comp2D.concat_lists epsilon list in
+      if Debug.debug then
+        Debug.print "... simplified line has %i paths." (List.length l);
+      Lines l
   | _ -> raise (Invalid_argument "[simplify_line]")
 
 (* crée un objet Adapt pour un graphe de fonction *)

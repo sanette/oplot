@@ -1,3 +1,7 @@
+# Pending
+
+* add toplevel test for CI
+
 # 0.86 -- 2025/12/28
 
 * Add `connect_lines` (Path module) This is a nice algorithm to

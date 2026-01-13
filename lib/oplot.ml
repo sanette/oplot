@@ -20,6 +20,7 @@ Debug.print "* Loading oplot";;
 include Oplot_intf
 module Points = Points
 module Debug = Debug
+
 module type GRAPHICS = Make_graphics.GRAPHICS
 
 (* The initial modules are grouped and re-split into two main modules: Plt for

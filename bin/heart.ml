@@ -147,7 +147,8 @@ Debug.timeit (fun () ->
 
 Debug.timeit (fun () ->
     display [ v; Color blue; spl2 ] ~dev:pdf
-      ~output:"heart_chaotic_simplified2.pdf");;
+      ~output:"heart_chaotic_simplified2.pdf")
+;;
 
 print_endline "Done.";;
 quit ()

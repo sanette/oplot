@@ -2002,10 +2002,13 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
     | FIG -> raise (Not_implemented "FIG clear")
 
   let exec_user f view dev =
-    let v = match view with
-      | None -> Debug.print "User object could not find a view; using a default";
-        default_view
-      | Some v -> v in
+    let v =
+      match view with
+      | None ->
+          Debug.print "User object could not find a view; using a default";
+          default_view
+      | Some v -> v
+    in
     f v dev
 
   (* trace un objet (mais pas sheet)*)

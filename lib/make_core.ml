@@ -11,7 +11,6 @@ module Make (Graphics : Make_graphics.GRAPHICS) = struct
   include Addons
 end
 
-
 (*
    Local Variables:
    compile-command:"cd ..;dune build"

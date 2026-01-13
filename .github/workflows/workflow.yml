@@ -14,22 +14,26 @@ jobs:
           - ubuntu-latest
           - windows-latest
         ocaml-compiler:
-          - 5.03.x
+          - 5
           - 4.14.x
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      OCAMLCI: "true"
     steps:
       - if: ${{ contains(matrix.os, 'ubuntu') }}
         run: sudo apt-get update -y
 
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - name: Checkout tree
+        uses: actions/checkout@v6
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - run: opam pin https://github.com/sanette/tsdl.git
 
       - run: opam install tgls
 
@@ -44,14 +48,13 @@ jobs:
   lint-fmt:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - name: Checkout tree
+        uses: actions/checkout@v6
 
-      - name: Use OCaml 5
+      - name: Use OCaml 4.14.x
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5
-          dune-cache: true
 
       - name: Lint fmt
         uses: ocaml/setup-ocaml/lint-fmt@v3
