@@ -557,7 +557,7 @@ module type Intf = sig
   module type S = S
   module type GRAPHICS = Make_graphics.GRAPHICS
 
-  module Make : (_ : GRAPHICS) -> S
+  module Make : GRAPHICS -> S
   (** Use this functor to create a new [Plt] module for adding a drawing
       backend. *)
 end
