@@ -287,18 +287,29 @@ let get_dpi_from_xdpyinfo () =
     None
 
 let get_dpi () =
-  match (get_dpi_from_xdpyinfo (), get_dpi_from_xrandr ()) with
-  | None, None -> None
-  | Some dpi, None | None, Some dpi -> Some dpi
-  | Some d1, Some d2 ->
-      if abs (d1 - d2) > 5 then begin
-        Debug.print
-          "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing \
-           the smaller."
-          d2 d1;
-        Some (min d1 d2)
-      end
-      else Some d2
+  match Sdl.get_display_dpi 0 with
+  | Ok (d, _h, _v) -> Some (int_of_float d)
+  | Error _ ->
+    (* TODO: SDL doc: « This reports the DPI that the hardware reports, and it is not
+       always reliable! It is almost always better to use SDL_GetWindowSize() to
+       find the window size, which might be in logical points instead of pixels,
+       and then SDL_GL_GetDrawableSize(), SDL_Vulkan_GetDrawableSize(),
+       SDL_Metal_GetDrawableSize(), or SDL_GetRendererOutputSize(), and compare
+       the two values to get an actual scaling value between the two. » *)
+    Debug.print "SDL_GetDisplayDPI fails, trying Linux commands...";
+    begin match (get_dpi_from_xdpyinfo (), get_dpi_from_xrandr ()) with
+      | None, None -> None
+      | Some dpi, None | None, Some dpi -> Some dpi
+      | Some d1, Some d2 ->
+        if abs (d1 - d2) > 5 then begin
+          Debug.print
+            "xrandr and xdpyinfo do not return the same dpi: %u != %u. Choosing \
+             the smaller."
+            d2 d1;
+          Some (min d1 d2)
+        end
+        else Some d2
+    end
 
 let init () =
   Debug.print "init";
