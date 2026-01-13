@@ -56,6 +56,10 @@ opam pin https://github.com/sanette/gl-legacy.git
 opam pin https://github.com/sanette/oplot.git
 ```
 
+On **Windows**, before installing, you may need to select this `tsdl` version:
+
+	opam pin https://github.com/sanette/tsdl
+
 ## Install v 0.72
 
 * `oplot<0.80` requires `lablgl`. If you have any trouble with this, try [this one.](https://github.com/sanette/lablgl-lib/tree/master?tab=readme-ov-file#how-to-use-this-one-instead-of-the-original-lablgl):

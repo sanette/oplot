@@ -205,8 +205,8 @@ module List_path (P : POINT) : PATH with type point := P.t = struct
   type point = P.t
 
   type t = { left : point; content : point list; right : point }
-  (** For the path {a...b}, [content] contains [b] but not [a], exept for the
-      singleton {a} for which [content] = []. *)
+  (** For the path [{a...b}], [content] contains [b] but not [a], exept for the
+      singleton [{a}] for which [content] = []. *)
 
   let left p = p.left
   let right p = p.right
@@ -249,8 +249,8 @@ module OList_path (P : POINT) : PATH with type point := P.t = struct
   type point = P.t
 
   type t = { left : point; content : point list; right : point; reverse : bool }
-  (** For the path {abcdef}, if [reverse=false], then [left]=a, [content]=bcde,
-      [right]=f. The singleton {a} is forbidden *)
+  (** For the path [{abcdef}], if [reverse=false], then [left]=a,
+      [content]=bcde, [right]=f. The singleton [{a}] is forbidden *)
 
   let left p = if p.reverse then p.right else p.left
   let right p = if p.reverse then p.left else p.right
