@@ -1,7 +1,7 @@
 (** Simple mathematical plotter library for [ocaml] with fast graphics (opengl),
     LaTeX display, and high quality vector output (xfig, postscript or PDF)
 
-    {%html:<img src="gamma.png" class="oplot" alt="oplot example">%}{%html:<img src="surf3d.png" class="oplot" alt="oplot example">%}
+    {%html:<img src="gamma.png" class="oplot" alt="oplot example">%}{%html:<img src="surf3d.png" class="oplot" alt="oplot example">%}{%html:<img src="heart2.png" class="oplot" alt="oplot example">%}
 
     Source available on {{:https://github.com/sanette/oplot} github}.
 

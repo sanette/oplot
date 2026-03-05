@@ -156,7 +156,7 @@ module type S = sig
       grid_size : int * int;
           (** Size of the initial sampling array. See {!compute_level}. *)
       grid : plot_object;
-          (** Plottig this object will draw the initial grid. This field is
+          (** Plotting this object will draw the initial grid. This field is
               empty if [debug=false] in the call of {!compute_level}. *)
       boxes : plot_object;
           (** Plotting this object will draw the cells where subsampling has
@@ -191,17 +191,17 @@ module type S = sig
 
         The meaning of the optional parameters is as follows.
 
-        - [pixel_size] is a hint to size in pixels of the box where the curve
-          will be drawn; it is used to detect the resolution at which the
-          computations should be made. The default is [(500,500)].
-        - [grid_size] is size of the initial sampling of the function [f]. For
-          instance, if [grid_size=(7,5)] the (x,y) region where the implicit
-          curve is sought is divised into 7x5 cells; hence there are 8=7+1
-          sampling points in the horizontal (x) direction, and 6=5+1 sampling
-          points in the vertical direction. By default [grid_size] is
-          automatically detected by looking at the function oscillations,
-          starting from an initial size of (34,34). Specifying this parameter
-          skips this detection, resulting in less evaluations of the function.
+        - [pixel_size] is a hint to the size in pixels of the box where the
+        curve will be drawn; it is used to detect the resolution at which the
+        computations should be made. The default is [(500,500)].  - [grid_size]
+        is size of the initial sampling of the function [f]. For instance, if
+        [grid_size=(7,5)] the (x,y) region where the implicit curve is sought is
+        divised into 7x5 cells; hence there are 8=7+1 sampling points in the
+        horizontal (x) direction, and 6=5+1 sampling points in the vertical
+        direction. By default [grid_size] is automatically detected by looking
+        at the function oscillations, starting from an initial size of
+        (34,34). Specifying this parameter skips this detection, resulting in
+        less evaluations of the function.
 
         Note however that sub-sampling will be applied (if [sub_size] is not
         [(1,1)]) in the cells where the curvature of the levelset is high.

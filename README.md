@@ -2,9 +2,9 @@
 
 Mathematical plotting library for ocaml
 
-| 2D plot and LaTeX |  3D surface |
-|-----|-----|
-|![gamma](docs/oplot/Oplot/gamma.png)| ![surf3d](docs/oplot/Oplot/surf3d.png) |
+| 2D plot and LaTeX |  3D surface | Isocurve |
+|-----|-----|-----|
+|![gamma](docs/oplot/Oplot/gamma.png)| ![surf3d](docs/oplot/Oplot/surf3d.png) | ![isosurface](docs/oplot/Oplot/heart2.png) |
 
 + 2D plots
   + function `y = f(x)`

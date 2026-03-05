@@ -26,6 +26,7 @@ cp top/example.png docs/oplot/Oplot/
 cp share/example2.png docs/oplot/Oplot/
 cp top/gamma.png docs/oplot/Oplot/
 cp top/surf3d.png docs/oplot/Oplot/
+cp top/heart2.png docs/oplot/Oplot/
 cp top/isocurve_debug.png docs/oplot/Oplot/Plt/Isocurve/
 
 echo "Done"
